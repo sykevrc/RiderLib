@@ -1,4 +1,6 @@
 #include "lemlib/tracking/TrackingWheelOdom.hpp"
+#include "lemlib/tracking/DistanceSensor.hpp"
+
 #include "hardware/Encoder/V5RotationSensor.hpp"
 #include "hardware/Encoder/ADIEncoder.hpp"
 #include "LemLog/logger/Helper.hpp"
@@ -40,6 +42,14 @@ TrackingWheel::TrackingWheel(SmartPort expanderPort, ADIPort topPort, ADIPort bo
       m_lastTotal(to_stRot(m_encoder->getAngle()) * M_PI * diameter * m_ratio),
       m_deallocate(true) {}
 
+DistanceSensor::DistanceSensor(SmartPort port, Length offset)
+    : m_sens(new lidar(port, offset)),
+    m_port(port),
+    m_offset(offset),
+    m_deallocate(true) {}
+
+Length DistanceSensor::getDistance(){return m_sens->get();}
+
 Length TrackingWheel::getDistanceTraveled() { return to_stRot(m_encoder->getAngle()) * M_PI * m_diameter; }
 
 Length TrackingWheel::getDistanceDelta() {
@@ -60,8 +70,9 @@ TrackingWheel::~TrackingWheel() {
 }
 
 TrackingWheelOdometry::TrackingWheelOdometry(std::vector<IMU*> imus, std::vector<TrackingWheel*> verticalWheels,
-                                             std::vector<TrackingWheel*> horizontalWheels)
+                                             std::vector<TrackingWheel*> horizontalWheels, std::vector<DistanceSensor*> dist)
     : m_Imus(imus),
+      m_distancesensors(dist),
       m_verticalWheels(verticalWheels),
       m_horizontalWheels(horizontalWheels) {}
 
@@ -114,7 +125,39 @@ static TrackingWheelData findLateralDelta(std::vector<TrackingWheel*>& sensors) 
     // return 0 if no data was found
     return {0_m, 0_m};
 }
+struct DistanceSensorData {
+        Length distance; /** the distance delta reported by the tracking wheel */
+        //Length offset; /** the offset of the tracking wheel used to measure the distance */
+};
 
+/**
+ * @brief Find position delta given tracking wheels
+ *
+ * This function checks if the data given equals INFINITY, and if it does, the tracking wheel
+ * which reported the data is removed its vectors.
+ *
+ * @param sensors the sensors to get data from
+ *
+ * @return LateralDelta the position delta
+ */
+static DistanceSensorData findWallR(std::vector<DistanceSensor*>& sensors) {
+    
+        DistanceSensor* sensor = sensors.at(0);
+        const Length data = sensor->getDistance();
+        return {data};
+    
+    // return 0 if no data was found
+    //return {0_m, 0_m};
+}
+static DistanceSensorData findWallL(std::vector<DistanceSensor*>& sensors) {
+    
+        DistanceSensor* sensor = sensors.at(1);
+        const Length data = sensor->getDistance();
+        return {data};
+    
+    // return 0 if no data was found
+    //return {0_m, 0_m};
+}
 /**
  * @brief calculate the heading given at least 2 tracking wheels
  *
@@ -191,9 +234,9 @@ void TrackingWheelOdometry::update(Time period) {
         const TrackingWheelData verticalData = findLateralDelta(m_verticalWheels);
 
         // step 2: calculate heading
-        const std::optional<Angle> thetaOpt = calculateIMUHeading(m_Imus)
-                                                  .or_else(std::bind(&calculateWheelHeading, m_horizontalWheels))
-                                                  .or_else(std::bind(&calculateWheelHeading, m_verticalWheels));
+        const std::optional<Angle> thetaOpt = calculateIMUHeading(m_Imus);
+                                                  //.or_else(std::bind(&calculateWheelHeading, m_horizontalWheels))
+                                                  //.or_else(std::bind(&calculateWheelHeading, m_verticalWheels));
         if (thetaOpt == std::nullopt) { // error checking
             helper.log(logger::Level::ERROR, "Not enough sensors available!");
             break;
@@ -202,6 +245,7 @@ void TrackingWheelOdometry::update(Time period) {
 
         // step 3: calculate change in local coordinates
         const Angle deltaTheta = theta - m_pose.orientation;
+
         const units::V2Position localPosition = [&] {
             const units::V2Position lateralDeltas = {verticalData.distance, horizontalData.distance};
             const units::V2Position lateralOffsets = {verticalData.offset, horizontalData.offset};
@@ -209,6 +253,8 @@ void TrackingWheelOdometry::update(Time period) {
             return 2 * units::sin(deltaTheta / 2) * (lateralDeltas / to_stRad(deltaTheta) + lateralOffsets);
         }();
 
+        const DistanceSensorData walldist = findWallR(m_distancesensors);
+        
         // step 4: set global position
         m_pose += localPosition.rotatedBy(m_pose.orientation + deltaTheta / 2);
         m_pose.orientation = theta;

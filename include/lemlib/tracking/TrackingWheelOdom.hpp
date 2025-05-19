@@ -265,7 +265,7 @@ class TrackingWheelOdometry {
          * @endcode
          */
         TrackingWheelOdometry(std::vector<IMU*> imus, std::vector<TrackingWheel*> verticalWheels,
-                              std::vector<TrackingWheel*> horizontalWheels);
+                              std::vector<TrackingWheel*> horizontalWheels, std::vector<DistanceSensor*> dist);
         /**
          * @brief Get the estimated Pose of the robot
          *
@@ -367,6 +367,7 @@ class TrackingWheelOdometry {
         Angle m_offset = 0_stDeg;
         std::optional<pros::Task> m_task = std::nullopt;
         std::vector<IMU*> m_Imus;
+        std::vector<DistanceSensor*> m_distancesensors;
         std::vector<TrackingWheel*> m_verticalWheels;
         std::vector<TrackingWheel*> m_horizontalWheels;
 };
