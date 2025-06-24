@@ -89,8 +89,8 @@ class PosePlotter:
                                     x = float(x_str)
                                     y = float(y_str)
                                     theta = float(theta_str)
-                                    right = float(right_str)*0.03937+7.75
-                                    left = float(left_str)*0.03937+7.75
+                                    right = float(right_str)*0.03937+9.25
+                                    left = float(left_str)*0.03937+9.25
                                     self.history.append((x, y, theta))
                                     if len(self.history) > HISTORY_LENGTH:
                                         self.history.pop(0)
@@ -158,8 +158,8 @@ class PosePlotter:
         theta = math.radians(theta_deg)
 
         # Define rectangle corners in local coordinates (centered at origin)
-        half_l =  8
-        half_w = 6.75
+        half_l =  9
+        half_w = 8
         corners = [
             (-half_l, -half_w),
             (-half_l,  half_w),

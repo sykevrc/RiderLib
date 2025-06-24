@@ -13,8 +13,8 @@ pros::MotorGroup leftMotors({-1,-2,-3},
                             pros::MotorGearset::blue); // left motor group - ports 3 (reversed), 4, 5 (reversed)
 pros::MotorGroup rightMotors({8,9,10}, pros::MotorGearset::blue); // right motor group - ports 6, 7, 9 (reversed)
 
-// Inertial Sensor on port 5
-pros::Imu imu(5);
+// Inertial Sensor on port 7
+pros::Imu imu(7);
 
 // tracking wheels
 // horizontal tracking wheel encoder. Rotation sensor, port 20, not reversed
@@ -22,20 +22,20 @@ pros::Imu imu(5);
 // vertical tracking wheel encoder. Rotation sensor, port 11, reversed
 pros::Rotation verticalEnc(-4);
 // distance sensor, right side on port 12
-pros::Distance rightdist(7);
-pros::Distance leftdist(6);
+pros::Distance rightdist(6);
+pros::Distance leftdist(5);
 
 // horizontal tracking wheel. 2.75" diameter, 5.75" offset, back of the robot (negative)
 //lemlib::TrackingWheel horizontal(&horizontalEnc, 2, -5.75);
 // vertical tracking wheel. 2.75" diameter, 2.5" offset, left of the robot (negative)
 lemlib::TrackingWheel vertical(&verticalEnc, 2, -.78);
 // use distance sensor in the drivetrain
-lemlib::DistanceSensor right(&rightdist, 7.75);
-lemlib::DistanceSensor left(&leftdist, 7.75);
+lemlib::DistanceSensor right(&rightdist, 9.25);
+lemlib::DistanceSensor left(&leftdist, 9.25);
 // drivetrain settings
 lemlib::Drivetrain drivetrain(&leftMotors, // left motor group
                               &rightMotors, // right motor group
-                              11.5, // 14 inch track width
+                              14.25, // 14 inch track width
                               (circ / M_PI), // found using empirical testing
                               450, // drivetrain rpm is 450
                               8 // horizontal drift is 8. Since we had traction wheels, it is 8
