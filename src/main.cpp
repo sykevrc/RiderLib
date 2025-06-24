@@ -117,7 +117,7 @@ void initialize() {
             // log position telemetry
             float lidarAngle = fmod(chassis.getPose().theta, 360.0f);     // Wrap within [-360, 360)
             if (lidarAngle < 0) lidarAngle += 360.0f;
-            printf("%.4f,%.4f,%.4f,%d,%d\n", chassis.getPose().x, chassis.getPose().y, lidarAngle,rightdist.get(), leftdist.get());
+            printf("%.4f,%.4f,%.4f,%d,%d\n", chassis.getPose().x, chassis.getPose().y, imu.get_heading(),rightdist.get(), leftdist.get());
             // delay to save resources
             pros::delay(50);
         }
@@ -144,73 +144,20 @@ ASSET(example_txt); // '.' replaced with "_" to make c++ happy
  * This is an example autonomous routine which demonstrates a lot of the features LemLib has to offer
  */
 constexpr float degToRad(float deg) { return deg * M_PI / 180; }
-void localize(){
-    float lidarAngle = fmod(chassis.getPose().theta, 360.0f);     // Wrap within [-360, 360)
-    if (lidarAngle < 0) lidarAngle += 360.0f;  // Wrap into [0, 360)
-    float lidarX,x=chassis.getPose().x;
-    float lidarY,y=chassis.getPose().y;
-    if (lidarX > 0) {
-        if (lidarAngle > 340 && lidarAngle < 20)  { // right distance from right wall
-            lidarX = 71.5 - (7.75+right.getDistance()*0.0394*cos(degToRad(lidarAngle-0)));
-        } else if (lidarAngle > 160 && lidarAngle < 200) { // left distance from right wall
-            lidarX = 71.5 - (left.getOffset()+left.getDistance()*0.0394*cos(degToRad(abs(lidarAngle-180))));
-        }
-    } else if (lidarX < 0) {
-        if (lidarAngle > 340 && lidarAngle < 20) { // left distance from left wall
-            lidarX = -71.5 + (left.getOffset()+left.getDistance()*0.0394*cos(degToRad(abs(lidarAngle-0))));
-        } else if (lidarAngle > 160 && lidarAngle < 200) { // right distance from left wall
-            lidarX = -71.5 + (right.getOffset()+right.getDistance()*0.0394*cos(degToRad(abs(lidarAngle-180))));
-        }
-    }
 
-    if (lidarY > 0) {
-        if (lidarAngle > 250 && lidarAngle < 290) { // right distance from top wall
-            lidarY = 71.5 - (right.getOffset()+right.getDistance()*0.0394*cos(degToRad(abs(lidarAngle-270))));
-        } else if (lidarAngle > 70 && lidarAngle < 110) { // left distance from top wall
-            lidarY = 71.5 - (left.getOffset()+left.getDistance()*0.0394*cos(degToRad(abs(lidarAngle-90))));
-        }
-    } else if (lidarY < 0) {
-        if (lidarAngle > 250 && lidarAngle < 290) { // left distance from bottom wall
-            lidarY = -71.5 + (left.getOffset()+left.getDistance()*0.0394*cos(degToRad(abs(lidarAngle-270))));
-        } else if (lidarAngle > 70 && lidarAngle < 110) { // right distance from bottom wall
-            lidarY = -71.5 + (right.getOffset()+right.getDistance()*0.0394*cos(degToRad(abs(lidarAngle-90))));
-        }
-    }
-
-    // For now, let's blend with odometry using simple averaging (or use a weighted average)
-    float alpha = 0.1; // weighting factor for blending
-    
-    lidarX = alpha * lidarX + (1 - alpha) * x;
-    lidarY = alpha * lidarY + (1 - alpha) * y;
-    chassis.setPose(lidarX,lidarY,chassis.getPose().theta);
-}
 void autonomous() {
-    // Move to x: 20 and y: 15, and face heading 90. Timeout set to 4000 ms
-    chassis.moveToPose(20, 15, 90, 4000);
-    // Move to x: 0 and y: 0 and face heading 270, going backwards. Timeout set to 4000ms
-    chassis.moveToPose(0, 0, 270, 4000, {.forwards = false});
-    // cancel the movement after it has traveled 10 inches
-    chassis.waitUntil(10);
-    chassis.cancelMotion();
-    // Turn to face the point x:45, y:-45. Timeout set to 1000
-    // dont turn faster than 60 (out of a maximum of 127)
-    chassis.turnToPoint(45, -45, 1000, {.maxSpeed = 60});
-    // Turn to face a direction of 90º. Timeout set to 1000
-    // will always be faster than 100 (out of a maximum of 127)
-    // also force it to turn clockwise, the long way around
-    chassis.turnToHeading(90, 1000, {.direction = AngularDirection::CW_CLOCKWISE, .minSpeed = 100});
-    // Follow the path in path.txt. Lookahead at 15, Timeout set to 4000
-    // following the path with the back of the robot (forwards = false)
-    // see line 116 to see how to define a path
-    chassis.follow(example_txt, 15, 4000, false);
-    // wait until the chassis has traveled 10 inches. Otherwise the code directly after
-    // the movement will run immediately
-    // Unless its another movement, in which case it will wait
-    chassis.waitUntil(10);
-    pros::lcd::print(4, "Traveled 10 inches during pure pursuit!");
-    // wait until the movement is done
-    chassis.waitUntilDone();
-    pros::lcd::print(4, "pure pursuit finished!");
+    chassis.setPose(0,-65.35,0);
+    for(int i = 0; i < 6; i ++){
+        chassis.moveToPoint(24,-24,1500,{.maxSpeed=50});
+        chassis.moveToPoint(48,-48,1500,{.maxSpeed=50});
+        chassis.moveToPoint(12,-52,1500,{.maxSpeed=50});
+
+        chassis.moveToPoint(-12,-52,1100,{.maxSpeed=50});
+        chassis.moveToPoint(-48,-48,1100,{.maxSpeed=50});
+        chassis.moveToPoint(-24,-24,1500,{.maxSpeed=50});
+    }
+    
+
 }
 /**
  * Runs in driver control
