@@ -13,6 +13,7 @@ pros::MotorGroup leftMotors({-1,-2,-3},
                             pros::MotorGearset::blue); // left motor group - ports 3 (reversed), 4, 5 (reversed)
 pros::MotorGroup rightMotors({8,9,10}, pros::MotorGearset::blue); // right motor group - ports 6, 7, 9 (reversed)
 
+pros::Motor intake(20);
 // Inertial Sensor on port 7
 pros::Imu imu(7);
 
@@ -40,6 +41,7 @@ lemlib::Drivetrain drivetrain(&leftMotors, // left motor group
                               450, // drivetrain rpm is 450
                               8 // horizontal drift is 8. Since we had traction wheels, it is 8
 );
+
 
 // lateral motion controller
 lemlib::ControllerSettings linearController(10, // proportional gain (kP)
@@ -172,10 +174,14 @@ void opcontrol() {
         // move the chassis with curvature drive
         chassis.arcade(leftY, rightX);
 
-        if (controller.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_L1))
+        if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_L1))
         {
-            chassis.setPose(24,0,0);
-
+            intake.move_voltage(8000);
+        }else if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_L2))
+        {
+            intake.move_voltage(-8000);
+        }else{
+            intake.move_voltage(0);
         }
         // delay to save resources
         pros::delay(10);
