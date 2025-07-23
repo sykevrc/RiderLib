@@ -9,9 +9,9 @@ const double calc = 60/(circ*0.75);
 pros::Controller controller(pros::E_CONTROLLER_MASTER);
 
 // motor groups
-pros::MotorGroup leftMotors({-1,-2,-3},
+pros::MotorGroup leftMotors({-1,-11,-12},
                             pros::MotorGearset::blue); // left motor group - ports 3 (reversed), 4, 5 (reversed)
-pros::MotorGroup rightMotors({8,9,10}, pros::MotorGearset::blue); // right motor group - ports 6, 7, 9 (reversed)
+pros::MotorGroup rightMotors({10,19,20}, pros::MotorGearset::blue); // right motor group - ports 6, 7, 9 (reversed)
 
 pros::Motor intake(20);
 // Inertial Sensor on port 7
@@ -115,11 +115,17 @@ void initialize() {
             pros::lcd::print(0, "X: %f", chassis.getPose().x); // x
             pros::lcd::print(1, "Y: %f", chassis.getPose().y); // y
             pros::lcd::print(2, "Theta: %f", chassis.getPose().theta); // heading
+            pros::lcd::print(3, "LeftW: %f", (leftMotors.get_power()+leftMotors.get_power(1)+leftMotors.get_power(2))/3); 
+            pros::lcd::print(4, "RightW: %f", (rightMotors.get_power()+rightMotors.get_power(1)+rightMotors.get_power(2))/3); 
+            pros::lcd::print(5, "Lticks: %f", (leftMotors.get_position()+leftMotors.get_position(1)+leftMotors.get_position(2))/3); 
+            pros::lcd::print(6, "Rticks: %f", (rightMotors.get_position()+rightMotors.get_position(1)+rightMotors.get_position(2))/3); 
+
             //controller.print(0, 0, "D: %s", rightdist.get());
             // log position telemetry
             float lidarAngle = fmod(chassis.getPose().theta, 360.0f);     // Wrap within [-360, 360)
             if (lidarAngle < 0) lidarAngle += 360.0f;
-            printf("%.4f,%.4f,%.4f,%d,%d\n", chassis.getPose().x, chassis.getPose().y, imu.get_heading(),rightdist.get(), leftdist.get());
+            
+            //printf("%.4f,%.4f,%.4f,%d,%d\n", chassis.getPose().x, chassis.getPose().y, imu.get_heading(),rightdist.get(), leftdist.get());
             // delay to save resources
             pros::delay(50);
         }
