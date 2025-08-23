@@ -195,7 +195,7 @@ void opcontrol() {
             //top.move_voltage(8000);
         }else if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_R2))
         {
-            intake.move_voltage(8000);
+            intake.move_voltage(13000);
             bottom.move_voltage(-8000);
             top.move_voltage(8000);
         }else if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_R1))
