@@ -13,7 +13,10 @@ pros::MotorGroup leftMotors({-1,-11,-12},
                             pros::MotorGearset::blue); // left motor group - ports 3 (reversed), 4, 5 (reversed)
 pros::MotorGroup rightMotors({10,19,20}, pros::MotorGearset::blue); // right motor group - ports 6, 7, 9 (reversed)
 
-pros::Motor intake(20);
+pros::Motor intake(-3);
+pros::Motor bottom(9);
+pros::Motor top(8);
+
 // Inertial Sensor on port 7
 pros::Imu imu(7);
 
@@ -182,12 +185,28 @@ void opcontrol() {
 
         if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_L1))
         {
-            intake.move_voltage(8000);
+            intake.move_voltage(-8000);
+            //top.move_voltage(-8000);
+            bottom.move_voltage(-8000);
         }else if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_L2))
         {
-            intake.move_voltage(-8000);
+            intake.move_voltage(8000);
+            bottom.move_voltage(8000);
+            //top.move_voltage(8000);
+        }else if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_R2))
+        {
+            intake.move_voltage(8000);
+            bottom.move_voltage(-8000);
+            top.move_voltage(8000);
+        }else if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_R1))
+        {
+            intake.move_voltage(8000);
+            bottom.move_voltage(-8000);
+            top.move_voltage(-8000);
         }else{
             intake.move_voltage(0);
+            bottom.move_voltage(0);
+            top.move_voltage(0);
         }
         // delay to save resources
         pros::delay(10);
