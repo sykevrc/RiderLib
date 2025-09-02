@@ -1,4 +1,8 @@
 #include "main.h"
+#include "pros/abstract_motor.hpp"
+#include "pros/adi.hpp"
+#include "pros/misc.h"
+#include "pros/motors.hpp"
 #include "lemlib/api.hpp" // IWYU pragma: keep
 
 const double circ = 7.739; // find this by pushing the chassis forward 60 inches 5 times and average all motor revolution counts.
@@ -17,6 +21,8 @@ pros::Motor intake(-3);
 pros::Motor bottom(9);
 pros::Motor top(8);
 
+pros::adi::Pneumatics park(7, false);
+pros::adi::Pneumatics match(6, false);
 // Inertial Sensor on port 7
 pros::Imu imu(7);
 
@@ -190,19 +196,26 @@ void opcontrol() {
             bottom.move_voltage(-8000);
         }else if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_L2))
         {
-            intake.move_voltage(8000);
-            bottom.move_voltage(8000);
+            intake.move_voltage(13000);
+            bottom.move_voltage(13000);
             //top.move_voltage(8000);
         }else if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_R2))
         {
-            intake.move_voltage(13000);
-            bottom.move_voltage(-8000);
-            top.move_voltage(8000);
+            intake.move_velocity(200);
+            bottom.move_velocity(-200);
+            top.move_voltage(13000);
         }else if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_R1))
         {
-            intake.move_voltage(8000);
-            bottom.move_voltage(-8000);
-            top.move_voltage(-8000);
+            intake.move_voltage(13000);
+            bottom.move_voltage(-13000);
+            top.move_voltage(-13000);
+        }
+        else if (controller.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_Y))
+        {
+            park.toggle();
+        }else if (controller.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_RIGHT))
+        {
+            match.toggle();
         }else{
             intake.move_voltage(0);
             bottom.move_voltage(0);
@@ -212,3 +225,4 @@ void opcontrol() {
         pros::delay(10);
     }
 }
+
