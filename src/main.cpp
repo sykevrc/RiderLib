@@ -5,9 +5,10 @@
 #include "pros/motors.hpp"
 #include "lemlib/api.hpp" // IWYU pragma: keep
 
-const double circ = 7.739; // find this by pushing the chassis forward 60 inches 5 times and average all motor revolution counts.
+const double circ = 7.861; // find this by pushing the chassis forward 60 inches 5 times and average all motor revolution counts.
 // the value of circ will be (60*motor_rpm) / (average_rev_counts*wheel_rpm)+7.742
-
+//2846.8
+//2824.4
 const double calc = 60/(circ*0.75);
 // controller
 pros::Controller controller(pros::E_CONTROLLER_MASTER);
@@ -24,13 +25,13 @@ pros::Motor top(8);
 pros::adi::Pneumatics park(7, false);
 pros::adi::Pneumatics match(6, false);
 // Inertial Sensor on port 7
-pros::Imu imu(7);
+pros::Imu imu(17);
 
 // tracking wheels
 // horizontal tracking wheel encoder. Rotation sensor, port 20, not reversed
 //pros::Rotation horizontalEnc(20);
 // vertical tracking wheel encoder. Rotation sensor, port 11, reversed
-pros::Rotation verticalEnc(-4);
+pros::Rotation verticalEnc(-18);
 // distance sensor, right side on port 12
 pros::Distance rightdist(6);
 pros::Distance leftdist(5);
@@ -53,7 +54,7 @@ lemlib::Drivetrain drivetrain(&leftMotors, // left motor group
 
 
 // lateral motion controller
-lemlib::ControllerSettings linearController(10, // proportional gain (kP)
+lemlib::ControllerSettings linearController(8, // proportional gain (kP)
                                             0, // integral gain (kI)
                                             3, // derivative gain (kD)
                                             3, // anti windup
@@ -109,7 +110,9 @@ lemlib::Chassis chassis(drivetrain, linearController, angularController, sensors
  */
 void initialize() {
     pros::lcd::initialize(); // initialize brain screen
-    chassis.calibrate(); // calibrate sensors
+    chassis.calibrate(); // calibrate sensor
+    rightMotors.set_encoder_units_all(pros::E_MOTOR_ENCODER_DEGREES);
+    leftMotors.set_encoder_units_all(pros::E_MOTOR_ENCODER_DEGREES);
     // the default rate is 50. however, if you need to change the rate, you
     // can do the following.
     // lemlib::bufferedStdout().setRate(...);
@@ -163,15 +166,10 @@ ASSET(example_txt); // '.' replaced with "_" to make c++ happy
 constexpr float degToRad(float deg) { return deg * M_PI / 180; }
 
 void autonomous() {
-    chassis.setPose(0,-65.35,0);
+    chassis.setPose(0,0,0);
     for(int i = 0; i < 6; i ++){
-        chassis.moveToPoint(24,-24,1500,{.maxSpeed=50});
-        chassis.moveToPoint(48,-48,1500,{.maxSpeed=50});
-        chassis.moveToPoint(12,-52,1500,{.maxSpeed=50});
-
-        chassis.moveToPoint(-12,-52,1100,{.maxSpeed=50});
-        chassis.moveToPoint(-48,-48,1100,{.maxSpeed=50});
-        chassis.moveToPoint(-24,-24,1500,{.maxSpeed=50});
+        chassis.moveToPoint(0,48,1500,{.maxSpeed=80});
+        chassis.moveToPoint(0,0,1500,{.forwards=false,.maxSpeed=80});
     }
     
 
