@@ -25,7 +25,7 @@ pros::Motor top(8);
 pros::adi::Pneumatics park(7, false);
 pros::adi::Pneumatics match(6, false);
 // Inertial Sensor on port 7
-pros::Imu imu(17);
+pros::Imu imu(4);
 
 // tracking wheels
 // horizontal tracking wheel encoder. Rotation sensor, port 20, not reversed
@@ -39,7 +39,7 @@ pros::Distance leftdist(5);
 // horizontal tracking wheel. 2.75" diameter, 5.75" offset, back of the robot (negative)
 //lemlib::TrackingWheel horizontal(&horizontalEnc, 2, -5.75);
 // vertical tracking wheel. 2.75" diameter, 2.5" offset, left of the robot (negative)
-lemlib::TrackingWheel vertical(&verticalEnc, 2, -.78);
+lemlib::TrackingWheel vertical(&verticalEnc, 2, -.5);
 // use distance sensor in the drivetrain
 lemlib::DistanceSensor right(&rightdist, 9.25);
 lemlib::DistanceSensor left(&leftdist, 9.25);
@@ -54,21 +54,21 @@ lemlib::Drivetrain drivetrain(&leftMotors, // left motor group
 
 
 // lateral motion controller
-lemlib::ControllerSettings linearController(8, // proportional gain (kP)
-                                            0, // integral gain (kI)
+lemlib::ControllerSettings linearController(4, // proportional gain (kP)
+                                            0.25, // integral gain (kI)
                                             3, // derivative gain (kD)
                                             3, // anti windup
                                             1, // small error range, in inches
                                             100, // small error range timeout, in milliseconds
                                             3, // large error range, in inches
                                             500, // large error range timeout, in milliseconds
-                                            20 // maximum acceleration (slew)
+                                            7 // maximum acceleration (slew)
 );
 
 // angular motion controller
 lemlib::ControllerSettings angularController(2, // proportional gain (kP)
-                                             0, // integral gain (kI)
-                                             10, // derivative gain (kD)
+                                             0.5, // integral gain (kI)
+                                             5, // derivative gain (kD)
                                              3, // anti windup
                                              1, // small error range, in degrees
                                              100, // small error range timeout, in milliseconds
@@ -131,7 +131,9 @@ void initialize() {
             pros::lcd::print(4, "RightW: %f", (rightMotors.get_power()+rightMotors.get_power(1)+rightMotors.get_power(2))/3); 
             pros::lcd::print(5, "Lticks: %f", (leftMotors.get_position()+leftMotors.get_position(1)+leftMotors.get_position(2))/3); 
             pros::lcd::print(6, "Rticks: %f", (rightMotors.get_position()+rightMotors.get_position(1)+rightMotors.get_position(2))/3); 
-
+            printf("Theta: %f\n", chassis.getPose().theta);
+            printf("X: %f ", chassis.getPose().x);
+            printf("Y: %f ", chassis.getPose().y);
             //controller.print(0, 0, "D: %s", rightdist.get());
             // log position telemetry
             float lidarAngle = fmod(chassis.getPose().theta, 360.0f);     // Wrap within [-360, 360)
@@ -166,11 +168,12 @@ ASSET(example_txt); // '.' replaced with "_" to make c++ happy
 constexpr float degToRad(float deg) { return deg * M_PI / 180; }
 
 void autonomous() {
-    chassis.setPose(0,0,0);
-    for(int i = 0; i < 6; i ++){
-        chassis.moveToPoint(0,48,1500,{.maxSpeed=80});
-        chassis.moveToPoint(0,0,1500,{.forwards=false,.maxSpeed=80});
-    }
+    //chassis.setPose(0,0,0);
+    chassis.setPose(-54.75,15,0);
+    //chassis.moveToPoint(chassis.getPose().x+2, 46,1000,{.maxSpeed=80});
+    //top.move_voltage(13000);
+    chassis.turnToHeading(-90,800,{.maxSpeed=80});
+    //top.move_voltage(0);
     
 
 }
