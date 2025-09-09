@@ -108,6 +108,25 @@ lemlib::Chassis chassis(drivetrain, linearController, angularController, sensors
  * All other competition modes are blocked by initialize; it is recommended
  * to keep execution time for this mode under a few seconds.
  */
+void run_intake(){
+    intake.move_voltage(13000);
+    bottom.move_voltage(13000);
+}
+void outtake(){
+    intake.move_voltage(-8000);
+    bottom.move_voltage(-8000);
+}
+void scoretop(){
+    intake.move_voltage(13000);
+    bottom.move_voltage(-13000);
+    top.move_voltage(-13000);
+}
+void scorebottom(){
+    intake.move_voltage(13000);
+    bottom.move_voltage(-13000);
+    top.move_voltage(13000);    
+}
+
 void initialize() {
     pros::lcd::initialize(); // initialize brain screen
     chassis.calibrate(); // calibrate sensor
@@ -170,16 +189,24 @@ constexpr float degToRad(float deg) { return deg * M_PI / 180; }
 void autonomous() {
     //chassis.setPose(0,0,0);
     chassis.setPose(-54.75,15,0);
-    //chassis.moveToPoint(chassis.getPose().x+2, 46,1000,{.maxSpeed=80});
-    //top.move_voltage(13000);
+    chassis.moveToPoint(chassis.getPose().x+3, 46,1000,{.maxSpeed=80});
+    top.move_voltage(13000);
     chassis.turnToHeading(-90,800,{.maxSpeed=80});
-    //top.move_voltage(0);
-    
-
+    top.move_voltage(0);
+    run_intake();
+    chassis.waitUntilDone();
+    match.toggle();
+    chassis.moveToPoint(-56,48,900);
+    pros::delay(3000);
+    chassis.moveToPoint(-48,48,800,{.forwards=false});
+    chassis.turnToHeading(90,800);
+    chassis.moveToPoint(-35,48,1000,{.maxSpeed=70});
+    scoretop();
 }
 /**
  * Runs in driver control
  */
+
 void opcontrol() {
     // controller
     // loop to continuously update motors
@@ -192,24 +219,16 @@ void opcontrol() {
 
         if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_L1))
         {
-            intake.move_voltage(-8000);
-            //top.move_voltage(-8000);
-            bottom.move_voltage(-8000);
+            outtake();
         }else if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_L2))
         {
-            intake.move_voltage(13000);
-            bottom.move_voltage(13000);
-            //top.move_voltage(8000);
+            run_intake();    
         }else if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_R2))
         {
-            intake.move_velocity(200);
-            bottom.move_velocity(-200);
-            top.move_voltage(13000);
+            scoretop();
         }else if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_R1))
         {
-            intake.move_voltage(13000);
-            bottom.move_voltage(-13000);
-            top.move_voltage(-13000);
+            scorebottom();
         }
         else if (controller.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_Y))
         {
