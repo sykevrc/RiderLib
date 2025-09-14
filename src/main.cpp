@@ -39,7 +39,7 @@ pros::Distance leftdist(5);
 // horizontal tracking wheel. 2.75" diameter, 5.75" offset, back of the robot (negative)
 //lemlib::TrackingWheel horizontal(&horizontalEnc, 2, -5.75);
 // vertical tracking wheel. 2.75" diameter, 2.5" offset, left of the robot (negative)
-lemlib::TrackingWheel vertical(&verticalEnc, 2, -.5);
+lemlib::TrackingWheel vertical(&verticalEnc, 2, 0);
 // use distance sensor in the drivetrain
 lemlib::DistanceSensor right(&rightdist, 9.25);
 lemlib::DistanceSensor left(&leftdist, 9.25);
@@ -188,19 +188,35 @@ constexpr float degToRad(float deg) { return deg * M_PI / 180; }
 
 void autonomous() {
     //chassis.setPose(0,0,0);
-    chassis.setPose(-54.75,15,0);
-    chassis.moveToPoint(chassis.getPose().x+3, 46,1000,{.maxSpeed=80});
+    chassis.setPose(-54.75,17.5,0);
+    chassis.moveToPoint(chassis.getPose().x+3, 47,3000,{.maxSpeed=80});
     top.move_voltage(13000);
-    chassis.turnToHeading(-90,800,{.maxSpeed=80});
+    chassis.turnToHeading(-90,3000,{.maxSpeed=80});
     top.move_voltage(0);
     run_intake();
-    chassis.waitUntilDone();
     match.toggle();
-    chassis.moveToPoint(-56,48,900);
+    chassis.moveToPoint(-58,48,2000,{.maxSpeed=60});
     pros::delay(3000);
-    chassis.moveToPoint(-48,48,800,{.forwards=false});
-    chassis.turnToHeading(90,800);
-    chassis.moveToPoint(-35,48,1000,{.maxSpeed=70});
+    chassis.moveToPoint(-56,48,2000,{.maxSpeed=60});
+    chassis.moveToPoint(-58,48,2000,{.maxSpeed=60});
+    pros::delay(3000);
+    // chassis.moveToPoint(-60.5,48,2000,{.minSpeed=40});
+    // //chassis.turnToHeading(-91,1000);
+    // chassis.moveToPoint(-57,48,500,{.minSpeed=40});
+    // //chassis.turnToHeading(-89,1000);
+    // chassis.moveToPoint(-60.5,48,3000,{.maxSpeed=70,.minSpeed=40,.earlyExitRange=0.01});
+    // chassis.moveToPoint(-57,48,500,{.minSpeed=40});
+    // chassis.moveToPoint(-60.5,48,2000,{.minSpeed=40});
+    // chassis.moveToPoint(-57,48,500,{.minSpeed=40});
+    // chassis.moveToPoint(-60.5,48,2000,{.minSpeed=40});
+    // chassis.moveToPoint(-57,48,500,{.minSpeed=40});
+    // chassis.moveToPoint(-60.5,48,1000,{.minSpeed=40});
+    //pros::delay(3000);
+    chassis.moveToPoint(-48,47,3000,{.forwards=false});
+    chassis.turnToHeading(90,3000,{.maxSpeed=80});
+    chassis.moveToPoint(-32,48,3000,{.maxSpeed=70});
+    match.toggle();
+    chassis.waitUntilDone();
     scoretop();
 }
 /**
