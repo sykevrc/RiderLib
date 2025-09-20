@@ -34,15 +34,15 @@ pros::Imu imu(4);
 pros::Rotation verticalEnc(-18);
 // distance sensor, right side on port 12
 pros::Distance rightdist(6);
-pros::Distance leftdist(5);
+pros::Distance leftdist(2);
 
 // horizontal tracking wheel. 2.75" diameter, 5.75" offset, back of the robot (negative)
 //lemlib::TrackingWheel horizontal(&horizontalEnc, 2, -5.75);
 // vertical tracking wheel. 2.75" diameter, 2.5" offset, left of the robot (negative)
-lemlib::TrackingWheel vertical(&verticalEnc, 2, 0);
+lemlib::TrackingWheel vertical(&verticalEnc, 2, -.5);
 // use distance sensor in the drivetrain
 lemlib::DistanceSensor right(&rightdist, 9.25);
-lemlib::DistanceSensor left(&leftdist, 9.25);
+lemlib::DistanceSensor left(&leftdist, 5);
 // drivetrain settings
 lemlib::Drivetrain drivetrain(&leftMotors, // left motor group
                               &rightMotors, // right motor group
@@ -152,6 +152,7 @@ void initialize() {
             pros::lcd::print(6, "Rticks: %f", (rightMotors.get_position()+rightMotors.get_position(1)+rightMotors.get_position(2))/3); 
             printf("Theta: %f\n", chassis.getPose().theta);
             printf("X: %f ", chassis.getPose().x);
+            printf("Xmodify: %f ",-71.5+(leftdist.get_distance()/25.4+5));
             printf("Y: %f ", chassis.getPose().y);
             //controller.print(0, 0, "D: %s", rightdist.get());
             // log position telemetry
@@ -188,24 +189,60 @@ constexpr float degToRad(float deg) { return deg * M_PI / 180; }
 
 void autonomous() {
     //chassis.setPose(0,0,0);
-    chassis.setPose(-54.75,17.5,0);
-    chassis.moveToPoint(chassis.getPose().x+3, 47,3000,{.maxSpeed=80});
+    chassis.setPose(-71.5+(leftdist.get_distance()/25.4+4.5),16,0); 
+    pros::delay(50);
+    chassis.moveToPose(chassis.getPose().x+3, 48,-90,3000,{.earlyExitRange=2});
     top.move_voltage(13000);
-    chassis.turnToHeading(-90,3000,{.maxSpeed=80});
+    match.toggle();
+    //chassis.turnToHeading(-90,3000,{.maxSpeed=80});
+    chassis.waitUntilDone();
     top.move_voltage(0);
     run_intake();
-    match.toggle();
-    chassis.moveToPoint(-63,48,600,{.minSpeed=40});
-    chassis.moveToPoint(-56,48,500);
-    chassis.moveToPoint(-63,48,2000,{.maxSpeed=14});
-    chassis.moveToPoint(-56,48,500);
-    chassis.moveToPoint(-63,48,2000,{.maxSpeed=14});
+    chassis.moveToPoint(-70,chassis.getPose().y,2000,{.minSpeed=25});
+    chassis.moveToPoint(-55,chassis.getPose().y,500,{.forwards=false});
+    chassis.moveToPoint(-70,chassis.getPose().y,2000,{.minSpeed=25});
 
-    chassis.moveToPoint(-48,46,3000,{.forwards=false});
-    chassis.turnToHeading(90,3000,{.maxSpeed=80});
-    chassis.moveToPoint(-32,48,3000,{.maxSpeed=70});
+    //chassis.moveToPoint(-56,48,500);
+    //chassis.moveToPoint(-63,48,2000,{.maxSpeed=14});
+    //pros::delay(3000);
+    chassis.moveToPoint(-50,49,800,{.forwards=false});
+    chassis.turnToHeading(90,2000,{.maxSpeed=80});
     match.toggle();
     chassis.waitUntilDone();
+    pros::delay(50);
+    chassis.moveToPoint(-37,chassis.getPose().y,1000);
+    chassis.waitUntilDone();
+    chassis.setPose(-34,48,chassis.getPose().theta);
+    scoretop();
+    pros::delay(3200);
+    chassis.moveToPoint(-40,33,1500,{.forwards=false});
+
+    chassis.moveToPoint(30,33,2000,{.earlyExitRange=10});
+    chassis.moveToPoint(40, 48,3000);
+    chassis.turnToHeading(90,1000);
+    match.toggle();
+    run_intake();
+    chassis.waitUntilDone();
+    chassis.setPose(40,71.5-(leftdist.get_distance()/25.4+4.5),chassis.getPose().theta);
+    chassis.moveToPoint(70,48,2000,{.minSpeed=25});
+    chassis.moveToPoint(50,48,500,{.forwards=false});
+    chassis.moveToPoint(70,chassis.getPose().y,2000,{.minSpeed=25});
+
+    //chassis.moveToPoint(-56,48,500);
+    //chassis.moveToPoint(-63,48,2000,{.maxSpeed=14});
+    //pros::delay(3000);
+    chassis.moveToPoint(50,49,800,{.forwards=false});
+    chassis.turnToHeading(90,2000,{.maxSpeed=80});
+    chassis.waitUntilDone();
+    chassis.setPose(50,71.5-(leftdist.get_distance()/25.4+4.5),chassis.getPose().theta);
+
+    chassis.turnToHeading(-90,2000,{.maxSpeed=80});
+    match.toggle();
+    chassis.waitUntilDone();
+    pros::delay(50);
+    chassis.moveToPoint(29,49,1000);
+    chassis.waitUntilDone();
+    chassis.setPose(34,48,chassis.getPose().theta);
     scoretop();
 }
 /**
