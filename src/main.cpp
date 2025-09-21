@@ -140,6 +140,8 @@ void initialize() {
     // for more information on how the formatting for the loggers
     // works, refer to the fmtlib docs
     // thread to for brain screen and position logging
+    printf("time,x,y,heading,rightDist,leftDist\n");
+
     pros::Task screenTask([&]() {
         while (true) {
             // print robot location to the brain screen
@@ -150,16 +152,14 @@ void initialize() {
             pros::lcd::print(4, "RightW: %f", (rightMotors.get_power()+rightMotors.get_power(1)+rightMotors.get_power(2))/3); 
             pros::lcd::print(5, "Lticks: %f", (leftMotors.get_position()+leftMotors.get_position(1)+leftMotors.get_position(2))/3); 
             pros::lcd::print(6, "Rticks: %f", (rightMotors.get_position()+rightMotors.get_position(1)+rightMotors.get_position(2))/3); 
-            printf("Theta: %f\n", chassis.getPose().theta);
-            printf("X: %f ", chassis.getPose().x);
-            printf("Xmodify: %f ",-71.5+(leftdist.get_distance()/25.4+5));
-            printf("Y: %f ", chassis.getPose().y);
             //controller.print(0, 0, "D: %s", rightdist.get());
             // log position telemetry
             float lidarAngle = fmod(chassis.getPose().theta, 360.0f);     // Wrap within [-360, 360)
             if (lidarAngle < 0) lidarAngle += 360.0f;
+
+
+            printf("%.4f,%.4f,%.4f,%d,%d\n", chassis.getPose().x, chassis.getPose().y, chassis.getPose().theta,rightdist.get(), leftdist.get());
             
-            //printf("%.4f,%.4f,%.4f,%d,%d\n", chassis.getPose().x, chassis.getPose().y, imu.get_heading(),rightdist.get(), leftdist.get());
             // delay to save resources
             pros::delay(50);
         }
@@ -198,9 +198,9 @@ void autonomous() {
     chassis.waitUntilDone();
     top.move_voltage(0);
     run_intake();
-    chassis.moveToPoint(-70,chassis.getPose().y,2000,{.minSpeed=25});
+    chassis.moveToPoint(-68,chassis.getPose().y,2000,{.minSpeed=20});
     chassis.moveToPoint(-55,chassis.getPose().y,500,{.forwards=false});
-    chassis.moveToPoint(-70,chassis.getPose().y,2000,{.minSpeed=25});
+    chassis.moveToPoint(-68,chassis.getPose().y,2000,{.minSpeed=20});
 
     //chassis.moveToPoint(-56,48,500);
     //chassis.moveToPoint(-63,48,2000,{.maxSpeed=14});
@@ -210,20 +210,20 @@ void autonomous() {
     match.toggle();
     chassis.waitUntilDone();
     pros::delay(50);
-    chassis.moveToPoint(-37,chassis.getPose().y,1000);
+    chassis.moveToPoint(-32,chassis.getPose().y,1000);
     chassis.waitUntilDone();
     chassis.setPose(-34,48,chassis.getPose().theta);
     scoretop();
     pros::delay(3200);
     chassis.moveToPoint(-40,33,1500,{.forwards=false});
-
-    chassis.moveToPoint(30,33,2000,{.earlyExitRange=10});
+    chassis.turnToHeading(90,400);
+    chassis.moveToPoint(30,33,2000,{.minSpeed=10,.earlyExitRange=15});
     chassis.moveToPoint(40, 48,3000);
     chassis.turnToHeading(90,1000);
     match.toggle();
     run_intake();
     chassis.waitUntilDone();
-    chassis.setPose(40,71.5-(leftdist.get_distance()/25.4+4.5),chassis.getPose().theta);
+    //chassis.setPose(40,71.5-(leftdist.get_distance()/25.4+4.5),chassis.getPose().theta);
     chassis.moveToPoint(70,48,2000,{.minSpeed=25});
     chassis.moveToPoint(50,48,500,{.forwards=false});
     chassis.moveToPoint(70,chassis.getPose().y,2000,{.minSpeed=25});
