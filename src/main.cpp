@@ -14,16 +14,16 @@ const double calc = 60/(circ*0.75);
 pros::Controller controller(pros::E_CONTROLLER_MASTER);
 
 // motor groups
-pros::MotorGroup leftMotors({-1,-11,-12},
+pros::MotorGroup leftMotors({-1,-19,-12},
                             pros::MotorGearset::blue); // left motor group - ports 3 (reversed), 4, 5 (reversed)
-pros::MotorGroup rightMotors({10,19,20}, pros::MotorGearset::blue); // right motor group - ports 6, 7, 9 (reversed)
+pros::MotorGroup rightMotors({10,20,13}, pros::MotorGearset::blue); // right motor group - ports 6, 7, 9 (reversed)
 
-pros::Motor intake(-3);
-pros::Motor bottom(9);
-pros::Motor top(8);
+pros::Motor intake(-2);
+pros::Motor top(-3);
+//pros::Motor top(8);
 
-pros::adi::Pneumatics park(7, false);
-pros::adi::Pneumatics match(6, false);
+pros::adi::Pneumatics hood(1, true);
+pros::adi::Pneumatics match(2, false);
 // Inertial Sensor on port 7
 pros::Imu imu(4);
 
@@ -31,7 +31,7 @@ pros::Imu imu(4);
 // horizontal tracking wheel encoder. Rotation sensor, port 20, not reversed
 //pros::Rotation horizontalEnc(20);
 // vertical tracking wheel encoder. Rotation sensor, port 11, reversed
-pros::Rotation verticalEnc(-18);
+pros::Rotation verticalEnc(-4);
 // distance sensor, right side on port 12
 pros::Distance rightdist(6);
 pros::Distance leftdist(2);
@@ -66,7 +66,7 @@ lemlib::ControllerSettings linearController(4, // proportional gain (kP)
 );
 
 // angular motion controller
-lemlib::ControllerSettings angularController(2, // proportional gain (kP)
+lemlib::ControllerSettings angularController(1.7, // proportional gain (kP)
                                              0.5, // integral gain (kI)
                                              5, // derivative gain (kD)
                                              3, // anti windup
@@ -110,21 +110,21 @@ lemlib::Chassis chassis(drivetrain, linearController, angularController, sensors
  */
 void run_intake(){
     intake.move_voltage(13000);
-    bottom.move_voltage(13000);
+    top.move_voltage(-13000);
 }
 void outtake(){
     intake.move_voltage(-8000);
-    bottom.move_voltage(-8000);
+    top.move_voltage(-8000);
 }
 void scoretop(){
     intake.move_voltage(13000);
-    bottom.move_voltage(-13000);
-    top.move_voltage(-13000);
+    top.move_voltage(13000);
+    hood.retract();
 }
 void scorebottom(){
     intake.move_voltage(13000);
-    bottom.move_voltage(-13000);
-    top.move_voltage(13000);    
+    top.move_voltage(13000);
+    hood.extend();  
 }
 
 void initialize() {
@@ -191,8 +191,8 @@ void autonomous() {
     //chassis.setPose(0,0,0);
     chassis.setPose(-71.5+(leftdist.get_distance()/25.4+4.5),16,0); 
     pros::delay(50);
-    chassis.moveToPose(chassis.getPose().x+3, 48,-90,3000,{.earlyExitRange=2});
-    top.move_voltage(13000);
+    chassis.moveToPose(chassis.getPose().x, 48,-90,3000,{.earlyExitRange=2});
+    top.move_voltage(5000);
     match.toggle();
     //chassis.turnToHeading(-90,3000,{.maxSpeed=80});
     chassis.waitUntilDone();
@@ -205,45 +205,23 @@ void autonomous() {
     //chassis.moveToPoint(-56,48,500);
     //chassis.moveToPoint(-63,48,2000,{.maxSpeed=14});
     //pros::delay(3000);
-    chassis.moveToPoint(-50,49,800,{.forwards=false});
+    chassis.moveToPoint(-50,48,800,{.forwards=false});
     chassis.turnToHeading(90,2000,{.maxSpeed=80});
     match.toggle();
     chassis.waitUntilDone();
     pros::delay(50);
-    chassis.moveToPoint(-32,chassis.getPose().y,1000);
+    chassis.moveToPoint(-32,48,1000);
     chassis.waitUntilDone();
     chassis.setPose(-34,48,chassis.getPose().theta);
     scoretop();
-    pros::delay(3200);
-    chassis.moveToPoint(-40,33,1500,{.forwards=false});
-    chassis.turnToHeading(90,400);
-    chassis.moveToPoint(30,33,2000,{.minSpeed=10,.earlyExitRange=15});
-    chassis.moveToPoint(40, 48,3000);
-    chassis.turnToHeading(90,1000);
-    match.toggle();
-    run_intake();
+    pros::delay(6000);
+    chassis.moveToPoint(-64,36,2000,{.forwards=false});
+    chassis.turnToHeading(180,1000);
     chassis.waitUntilDone();
-    //chassis.setPose(40,71.5-(leftdist.get_distance()/25.4+4.5),chassis.getPose().theta);
-    chassis.moveToPoint(70,48,2000,{.minSpeed=25});
-    chassis.moveToPoint(50,48,500,{.forwards=false});
-    chassis.moveToPoint(70,chassis.getPose().y,2000,{.minSpeed=25});
-
-    //chassis.moveToPoint(-56,48,500);
-    //chassis.moveToPoint(-63,48,2000,{.maxSpeed=14});
-    //pros::delay(3000);
-    chassis.moveToPoint(50,49,800,{.forwards=false});
-    chassis.turnToHeading(90,2000,{.maxSpeed=80});
-    chassis.waitUntilDone();
-    chassis.setPose(50,71.5-(leftdist.get_distance()/25.4+4.5),chassis.getPose().theta);
-
-    chassis.turnToHeading(-90,2000,{.maxSpeed=80});
-    match.toggle();
-    chassis.waitUntilDone();
-    pros::delay(50);
-    chassis.moveToPoint(29,49,1000);
-    chassis.waitUntilDone();
-    chassis.setPose(34,48,chassis.getPose().theta);
-    scoretop();
+    chassis.setPose(-71.5+(rightdist.get_distance()/25.4+4.5),chassis.getPose().y, chassis.getPose().theta);
+    chassis.moveToPose(-62,24,180,2000);
+    chassis.moveToPoint(-68, 0, 2000, {.minSpeed=70});
+    chassis.moveToPoint(-68, 5, 2000, {.forwards=false,.minSpeed=70});
 }
 /**
  * Runs in driver control
@@ -274,13 +252,13 @@ void opcontrol() {
         }
         else if (controller.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_Y))
         {
-            park.toggle();
+            hood.toggle();
         }else if (controller.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_RIGHT))
         {
             match.toggle();
         }else{
             intake.move_voltage(0);
-            bottom.move_voltage(0);
+            //bottom.move_voltage(0);
             top.move_voltage(0);
         }
         // delay to save resources
