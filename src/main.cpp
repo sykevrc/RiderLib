@@ -10,6 +10,7 @@ const double circ = 7.861; // find this by pushing the chassis forward 60 inches
 //2846.8
 //2824.4
 const double calc = 60/(circ*0.75);
+int starthue = 0;
 // controller
 pros::Controller controller(pros::E_CONTROLLER_MASTER);
 
@@ -22,10 +23,10 @@ pros::Motor intake(-2);
 pros::Motor top(-3);
 //pros::Motor top(8);
 
-pros::adi::Pneumatics hood(1, true);
+pros::adi::Pneumatics hood(1, false);
 pros::adi::Pneumatics match(2, false);
 // Inertial Sensor on port 7
-pros::Imu imu(4);
+pros::Imu imu(6);
 
 // tracking wheels
 // horizontal tracking wheel encoder. Rotation sensor, port 20, not reversed
@@ -33,12 +34,13 @@ pros::Imu imu(4);
 // vertical tracking wheel encoder. Rotation sensor, port 11, reversed
 pros::Rotation verticalEnc(-4);
 // distance sensor, right side on port 12
-pros::Distance rightdist(6);
+pros::Distance rightdist(9);
 pros::Distance leftdist(2);
 
+pros::Optical colorsens(5);
 // horizontal tracking wheel. 2.75" diameter, 5.75" offset, back of the robot (negative)
 //lemlib::TrackingWheel horizontal(&horizontalEnc, 2, -5.75);
-// vertical tracking wheel. 2.75" diameter, 2.5" offset, left of the robot (negative)
+// vertical tracking wheel. 2" diameter, .5" offset, left of the robot (negative)
 lemlib::TrackingWheel vertical(&verticalEnc, 2, -.5);
 // use distance sensor in the drivetrain
 lemlib::DistanceSensor right(&rightdist, 9.25);
@@ -110,7 +112,16 @@ lemlib::Chassis chassis(drivetrain, linearController, angularController, sensors
  */
 void run_intake(){
     intake.move_voltage(13000);
-    top.move_voltage(-13000);
+}
+void load_up(){
+    intake.move_voltage(13000);
+    if(colorsens.get_hue()+20<starthue){
+    top.move_voltage(-3000);
+   }else if (colorsens.get_hue()-20>starthue){
+    top.move_voltage(0);
+   }else{
+    top.move_voltage(13000);
+   }
 }
 void outtake(){
     intake.move_voltage(-8000);
@@ -132,6 +143,11 @@ void initialize() {
     chassis.calibrate(); // calibrate sensor
     rightMotors.set_encoder_units_all(pros::E_MOTOR_ENCODER_DEGREES);
     leftMotors.set_encoder_units_all(pros::E_MOTOR_ENCODER_DEGREES);
+    colorsens.set_led_pwm(100);
+    colorsens.set_integration_time(3);
+
+    starthue = colorsens.get_hue();
+
     // the default rate is 50. however, if you need to change the rate, you
     // can do the following.
     // lemlib::bufferedStdout().setRate(...);
