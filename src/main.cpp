@@ -4,6 +4,7 @@
 #include "pros/misc.h"
 #include "pros/motors.hpp"
 #include "lemlib/api.hpp" // IWYU pragma: keep
+#include "robodash/api.h"
 
 const double circ = 7.861; // find this by pushing the chassis forward 60 inches 5 times and average all motor revolution counts.
 // the value of circ will be (60*motor_rpm) / (average_rev_counts*wheel_rpm)+7.742
@@ -11,37 +12,38 @@ const double circ = 7.861; // find this by pushing the chassis forward 60 inches
 //2824.4
 const double calc = 60/(circ*0.75);
 int starthue = 0;
+bool side = true; //false is blue
 // controller
 pros::Controller controller(pros::E_CONTROLLER_MASTER);
 
 // motor groups
-pros::MotorGroup leftMotors({-1,-19,-12},
+pros::MotorGroup leftMotors({-2,-19,-12},
                             pros::MotorGearset::blue); // left motor group - ports 3 (reversed), 4, 5 (reversed)
 pros::MotorGroup rightMotors({10,20,13}, pros::MotorGearset::blue); // right motor group - ports 6, 7, 9 (reversed)
 
-pros::Motor intake(-2);
-pros::Motor top(-3);
+pros::Motor intake(-1);
+pros::Motor top(-14);
 //pros::Motor top(8);
 
 pros::adi::Pneumatics hood(1, false);
 pros::adi::Pneumatics match(2, false);
-// Inertial Sensor on port 7
-pros::Imu imu(6);
+// Inertial Sensor on port 11
+pros::Imu imu(11);
 
 // tracking wheels
 // horizontal tracking wheel encoder. Rotation sensor, port 20, not reversed
 //pros::Rotation horizontalEnc(20);
 // vertical tracking wheel encoder. Rotation sensor, port 11, reversed
-pros::Rotation verticalEnc(-4);
+pros::Rotation verticalEnc(3);
 // distance sensor, right side on port 12
 pros::Distance rightdist(9);
-pros::Distance leftdist(2);
+pros::Distance leftdist(5);
 
-pros::Optical colorsens(5);
+pros::Optical colorsens(4);
 // horizontal tracking wheel. 2.75" diameter, 5.75" offset, back of the robot (negative)
 //lemlib::TrackingWheel horizontal(&horizontalEnc, 2, -5.75);
-// vertical tracking wheel. 2" diameter, .5" offset, left of the robot (negative)
-lemlib::TrackingWheel vertical(&verticalEnc, 2, -.5);
+// vertical tracking wheel. 2" diameter, .5" offset, right of the robot (negative)
+lemlib::TrackingWheel vertical(&verticalEnc, 2.1, .5);
 // use distance sensor in the drivetrain
 lemlib::DistanceSensor right(&rightdist, 9.25);
 lemlib::DistanceSensor left(&leftdist, 5);
@@ -110,18 +112,32 @@ lemlib::Chassis chassis(drivetrain, linearController, angularController, sensors
  * All other competition modes are blocked by initialize; it is recommended
  * to keep execution time for this mode under a few seconds.
  */
+
+
 void run_intake(){
     intake.move_voltage(13000);
+    top.move_voltage(0);
 }
 void load_up(){
     intake.move_voltage(13000);
-    if(colorsens.get_hue()+20<starthue){
-    top.move_voltage(-3000);
-   }else if (colorsens.get_hue()-20>starthue){
-    top.move_voltage(0);
-   }else{
-    top.move_voltage(13000);
-   }
+    if(side){//red
+        if(colorsens.get_hue()<starthue-20){
+        top.move_voltage(-3000);
+        }else if (colorsens.get_hue()>starthue+20){
+            top.move_voltage(10000);
+        }else{
+            top.move_voltage(13000);
+        }
+    }else{
+        if(colorsens.get_hue()<starthue-20){
+        top.move_voltage(10000);
+        }else if (colorsens.get_hue()>starthue+20){
+            top.move_voltage(-3000);
+        }else{
+            top.move_voltage(13000);
+        }
+    }
+    
 }
 void outtake(){
     intake.move_voltage(-8000);
@@ -143,10 +159,11 @@ void initialize() {
     chassis.calibrate(); // calibrate sensor
     rightMotors.set_encoder_units_all(pros::E_MOTOR_ENCODER_DEGREES);
     leftMotors.set_encoder_units_all(pros::E_MOTOR_ENCODER_DEGREES);
+
     colorsens.set_led_pwm(100);
     colorsens.set_integration_time(3);
 
-    starthue = colorsens.get_hue();
+    
 
     // the default rate is 50. however, if you need to change the rate, you
     // can do the following.
@@ -156,7 +173,7 @@ void initialize() {
     // for more information on how the formatting for the loggers
     // works, refer to the fmtlib docs
     // thread to for brain screen and position logging
-    printf("time,x,y,heading,rightDist,leftDist\n");
+    //printf("time,x,y,heading,rightDist,leftDist\n");
 
     pros::Task screenTask([&]() {
         while (true) {
@@ -164,21 +181,22 @@ void initialize() {
             pros::lcd::print(0, "X: %f", chassis.getPose().x); // x
             pros::lcd::print(1, "Y: %f", chassis.getPose().y); // y
             pros::lcd::print(2, "Theta: %f", chassis.getPose().theta); // heading
-            pros::lcd::print(3, "LeftW: %f", (leftMotors.get_power()+leftMotors.get_power(1)+leftMotors.get_power(2))/3); 
-            pros::lcd::print(4, "RightW: %f", (rightMotors.get_power()+rightMotors.get_power(1)+rightMotors.get_power(2))/3); 
-            pros::lcd::print(5, "Lticks: %f", (leftMotors.get_position()+leftMotors.get_position(1)+leftMotors.get_position(2))/3); 
-            pros::lcd::print(6, "Rticks: %f", (rightMotors.get_position()+rightMotors.get_position(1)+rightMotors.get_position(2))/3); 
+            // pros::lcd::print(3, "LeftW: %f", (leftMotors.get_power()+leftMotors.get_power(1)+leftMotors.get_power(2))/3); 
+            // pros::lcd::print(4, "RightW: %f", (rightMotors.get_power()+rightMotors.get_power(1)+rightMotors.get_power(2))/3); 
+            // pros::lcd::print(5, "Lticks: %f", (leftMotors.get_position()+leftMotors.get_position(1)+leftMotors.get_position(2))/3); 
+            // pros::lcd::print(6, "Rticks: %f", (rightMotors.get_position()+rightMotors.get_position(1)+rightMotors.get_position(2))/3); 
             //controller.print(0, 0, "D: %s", rightdist.get());
-            // log position telemetry
-            float lidarAngle = fmod(chassis.getPose().theta, 360.0f);     // Wrap within [-360, 360)
-            if (lidarAngle < 0) lidarAngle += 360.0f;
+            // // log position telemetry
+            // float lidarAngle = fmod(chassis.getPose().theta, 360.0f);     // Wrap within [-360, 360)
+            // if (lidarAngle < 0) lidarAngle += 360.0f;
 
 
-            printf("%.4f,%.4f,%.4f,%d,%d\n", chassis.getPose().x, chassis.getPose().y, chassis.getPose().theta,rightdist.get(), leftdist.get());
+            // printf("%.4f,%.4f,%.4f,%d,%d\n", chassis.getPose().x, chassis.getPose().y, chassis.getPose().theta,rightdist.get(), leftdist.get());
             
             // delay to save resources
             pros::delay(50);
         }
+    starthue = colorsens.get_hue();
     });
 }
 
@@ -201,48 +219,121 @@ ASSET(example_txt); // '.' replaced with "_" to make c++ happy
  *
  * This is an example autonomous routine which demonstrates a lot of the features LemLib has to offer
  */
-constexpr float degToRad(float deg) { return deg * M_PI / 180; }
+//constexpr float degToRad(float deg) { return deg * M_PI / 180; }
 
-void autonomous() {
+void skills() {
+    pros::Task([&](){
+        if((intake.get_voltage()/13000)*0.75 > intake.get_actual_velocity()/127){
+            intake.move_voltage(-1000);
+            pros::delay(250);
+            intake.move_voltage(13000);
+        }
+        if((top.get_voltage()/13000)*0.75 > top.get_actual_velocity()/127){
+            top.move_voltage(-1000);
+            pros::delay(250);
+            top.move_voltage(13000);
+        }
+        pros::delay(50);
+    });
     //chassis.setPose(0,0,0);
-    chassis.setPose(-71.5+(leftdist.get_distance()/25.4+4.5),16,0); 
+    chassis.setPose(-70.5+(leftdist.get_distance()/25.4+4.5),14.25,0); 
     pros::delay(50);
     chassis.moveToPose(chassis.getPose().x, 48,-90,3000,{.earlyExitRange=2});
-    top.move_voltage(5000);
-    match.toggle();
-    //chassis.turnToHeading(-90,3000,{.maxSpeed=80});
-    chassis.waitUntilDone();
-    top.move_voltage(0);
     run_intake();
-    chassis.moveToPoint(-68,chassis.getPose().y,2000,{.minSpeed=20});
-    chassis.moveToPoint(-55,chassis.getPose().y,500,{.forwards=false});
-    chassis.moveToPoint(-68,chassis.getPose().y,2000,{.minSpeed=20});
-
-    //chassis.moveToPoint(-56,48,500);
-    //chassis.moveToPoint(-63,48,2000,{.maxSpeed=14});
-    //pros::delay(3000);
-    chassis.moveToPoint(-50,48,800,{.forwards=false});
-    chassis.turnToHeading(90,2000,{.maxSpeed=80});
     match.toggle();
     chassis.waitUntilDone();
-    pros::delay(50);
-    chassis.moveToPoint(-32,48,1000);
+    
+    chassis.moveToPoint(-61.5,chassis.getPose().y,1000,{.minSpeed=80});
     chassis.waitUntilDone();
-    chassis.setPose(-34,48,chassis.getPose().theta);
+    pros::delay(1000);
+    chassis.moveToPoint(-61.5,chassis.getPose().y,2000,{.maxSpeed=30});
+
+    chassis.moveToPoint(chassis.getPose().x+1,chassis.getPose().y,500,{.forwards=false,.maxSpeed=20});
+    chassis.moveToPoint(-61.5,chassis.getPose().y,2000,{.maxSpeed=30});
+    chassis.moveToPoint(chassis.getPose().x+1,chassis.getPose().y,500,{.forwards=false,.maxSpeed=20});
+    chassis.moveToPoint(-62,chassis.getPose().y,2000,{.maxSpeed=30});
+    
+    chassis.moveToPoint(-29,48,1000,{.forwards=false});
+    chassis.turnToHeading(-90,1000);
+    chassis.waitUntilDone();
     scoretop();
-    pros::delay(6000);
-    chassis.moveToPoint(-64,36,2000,{.forwards=false});
+    pros::delay(1500);
+    outtake();
+    pros::delay(200);
+    scoretop();
+    pros::delay(1500);
+    chassis.moveToPose(-40,-24,180,1000);
+    chassis.moveToPoint(-40,-48,3000);
     chassis.turnToHeading(180,1000);
     chassis.waitUntilDone();
-    chassis.setPose(-71.5+(rightdist.get_distance()/25.4+4.5),chassis.getPose().y, chassis.getPose().theta);
-    chassis.moveToPose(-62,24,180,2000);
-    chassis.moveToPoint(-68, 0, 2000, {.minSpeed=70});
-    chassis.moveToPoint(-68, 5, 2000, {.forwards=false,.minSpeed=70});
+    chassis.setPose(-70.5+(rightdist.get_distance()/25.4+3),chassis.getPose().y,chassis.getPose().theta);
+    pros::delay(50);
+    chassis.turnToHeading(-90,1000);
+    chassis.waitUntilDone();
+    chassis.setPose(chassis.getPose().x, -70.5+(leftdist.get_distance()/25.4+3.5),chassis.getPose().theta);
+    run_intake();
+    chassis.waitUntilDone();
+    chassis.moveToPose(-50,-48,-90,2000);
+    chassis.moveToPoint(-61.5,-48,1000,{.minSpeed=70});
+    chassis.waitUntilDone();
+    pros::delay(2000);
+    chassis.moveToPoint(-61.5,chassis.getPose().y,2000,{.maxSpeed=30});
+
+    chassis.moveToPoint(chassis.getPose().x+1,chassis.getPose().y,500,{.forwards=false,.maxSpeed=20});
+    chassis.moveToPoint(-61.5,chassis.getPose().y,2000,{.maxSpeed=30});
+    chassis.moveToPoint(chassis.getPose().x+1,chassis.getPose().y,500,{.forwards=false,.maxSpeed=20});
+    chassis.moveToPoint(-62,chassis.getPose().y,2000,{.maxSpeed=30});
+    chassis.moveToPoint(chassis.getPose().x+1,chassis.getPose().y,500,{.forwards=false,.maxSpeed=20});
+    chassis.moveToPoint(-61.5,chassis.getPose().y,2000,{.maxSpeed=30});
+
+    chassis.moveToPoint(-29,-48,1000,{.forwards=false});
+    chassis.turnToHeading(-90,1000);
+    chassis.waitUntilDone();
+    scoretop();
+    pros::delay(1500);
+    outtake();
+    pros::delay(200);
+    scoretop();
+    pros::delay(1500);
+    chassis.moveToPoint(-64,-36,2000);
+    match.toggle();
+    chassis.turnToHeading(0,1000);
+    chassis.waitUntilDone();
+    chassis.setPose(-70.5+(leftdist.get_distance()/25.4+3.5),chassis.getPose().y, chassis.getPose().theta);
+    chassis.moveToPose(-62,-24,0,2000);
+    chassis.moveToPoint(-68, 0, 2000, {.minSpeed=100});
+    chassis.moveToPoint(-68, -5, 2000, {.forwards=false,.minSpeed=70});
+
 }
+void sawp(){
+
+}
+void qteam(){
+
+}
+void l_elim(){
+
+}
+void r_elim(){
+
+}
+// Create robodash selector
+rd::Selector selector({
+    // {"Q SAWP", &sawp, "", 0},
+    // {"Q TEAM", &qteam, "", 220},
+    // {"L Elim", &l_elim, "", 100},
+    // {"R Elim", &r_elim, "", 100},
+    {"Skills", &skills, "", 100},
+});
+
+// Create robodash console
+rd::Console console;
 /**
  * Runs in driver control
  */
-
+void autonomous(){
+    skills();
+}
 void opcontrol() {
     // controller
     // loop to continuously update motors
