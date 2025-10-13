@@ -175,13 +175,15 @@ void initialize() {
     
     });
     starthue = colorsens.get_hue();
-    selector.on_select([](std::optional<rd::Selector::routine_t> routine) {
-		if (routine == std::nullopt) {
-			std::cout << "No routine selected" << std::endl;
-		} else {
-			std::cout << "Selected Routine: " << routine.value().name << std::endl;
-		}
-	});
+
+    // selector.on_select([](std::optional<rd::Selector::routine_t> routine) {
+	// 	if (routine == std::nullopt) {
+	// 		std::cout << "No routine selected" << std::endl;
+	// 	} else {
+	// 		std::cout << "Selected Routine: " << routine.value().name << std::endl;
+    //      controller.print(0,0,"%s", routine.value().name);
+	// 	}
+	// });
 }
 
 /**
