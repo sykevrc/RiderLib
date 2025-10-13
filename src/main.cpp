@@ -163,41 +163,25 @@ void initialize() {
     colorsens.set_led_pwm(100);
     colorsens.set_integration_time(3);
 
-    
-
-    // the default rate is 50. however, if you need to change the rate, you
-    // can do the following.
-    // lemlib::bufferedStdout().setRate(...);
-    // If you use bluetooth or a wired connection, you will want to have a rate of 10ms
-
-    // for more information on how the formatting for the loggers
-    // works, refer to the fmtlib docs
-    // thread to for brain screen and position logging
-    //printf("time,x,y,heading,rightDist,leftDist\n");
-
     pros::Task screenTask([&]() {
         while (true) {
             // print robot location to the brain screen
             pros::lcd::print(0, "X: %f", chassis.getPose().x); // x
             pros::lcd::print(1, "Y: %f", chassis.getPose().y); // y
             pros::lcd::print(2, "Theta: %f", chassis.getPose().theta); // heading
-            // pros::lcd::print(3, "LeftW: %f", (leftMotors.get_power()+leftMotors.get_power(1)+leftMotors.get_power(2))/3); 
-            // pros::lcd::print(4, "RightW: %f", (rightMotors.get_power()+rightMotors.get_power(1)+rightMotors.get_power(2))/3); 
-            // pros::lcd::print(5, "Lticks: %f", (leftMotors.get_position()+leftMotors.get_position(1)+leftMotors.get_position(2))/3); 
-            // pros::lcd::print(6, "Rticks: %f", (rightMotors.get_position()+rightMotors.get_position(1)+rightMotors.get_position(2))/3); 
-            //controller.print(0, 0, "D: %s", rightdist.get());
-            // // log position telemetry
-            // float lidarAngle = fmod(chassis.getPose().theta, 360.0f);     // Wrap within [-360, 360)
-            // if (lidarAngle < 0) lidarAngle += 360.0f;
-
-
-            // printf("%.4f,%.4f,%.4f,%d,%d\n", chassis.getPose().x, chassis.getPose().y, chassis.getPose().theta,rightdist.get(), leftdist.get());
             
-            // delay to save resources
             pros::delay(50);
         }
-    starthue = colorsens.get_hue();
+    
     });
+    starthue = colorsens.get_hue();
+    selector.on_select([](std::optional<rd::Selector::routine_t> routine) {
+		if (routine == std::nullopt) {
+			std::cout << "No routine selected" << std::endl;
+		} else {
+			std::cout << "Selected Routine: " << routine.value().name << std::endl;
+		}
+	});
 }
 
 /**
