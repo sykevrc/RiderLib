@@ -212,7 +212,8 @@ void competition_initialize() {}
 
 // get a path used for pure pursuit
 // this needs to be put outside a function
-ASSET(example_txt); // '.' replaced with "_" to make c++ happy
+ASSET(arc_txt); // '.' replaced with "_" to make c++ happy
+ASSET(under_txt); // '.' replaced with "_" to make c++ happy
 void redloader(){
     chassis.moveToPoint(-58,chassis.getPose().y,1000,{.minSpeed=80});
     chassis.moveToPoint(-56,chassis.getPose().y,2000,{.forwards=false,.maxSpeed=30});
@@ -223,8 +224,8 @@ void redloader(){
     chassis.moveToPoint(-62,chassis.getPose().y,2000,{.maxSpeed=30});
 }
 void redloaderquick(){
-    chassis.moveToPoint(-58,chassis.getPose().y,500,{.minSpeed=70});
-    chassis.moveToPoint(-60,chassis.getPose().y,700,{.maxSpeed=30});
+    chassis.moveToPoint(-59,chassis.getPose().y,500,{.minSpeed=70});
+    chassis.moveToPoint(-57,chassis.getPose().y,700,{.maxSpeed=30});
     chassis.moveToPoint(-62,chassis.getPose().y,800,{.maxSpeed=40});
 }
 /**
@@ -327,8 +328,8 @@ void q_team(){
     match.toggle();
     run_intake();
     chassis.moveToPoint(-33,48,500);
-    chassis.moveToPoint(-24,28,1000);
-    chassis.moveToPoint(-24,20,3000,{.maxSpeed=30});
+    chassis.moveToPoint(-28,28,1000);
+    chassis.moveToPoint(-22,22,3000,{.maxSpeed=30});
     chassis.turnToHeading(-45,1000);
 
     chassis.moveToPoint(-11,13,3000,{.forwards=false,.maxSpeed=50});
@@ -336,8 +337,37 @@ void q_team(){
     scorebottom();
 }
 
-void l_elim(){
-
+void elim(){
+    if(colorsens.get_hue()<20){
+        side = true;
+    }else{
+        side = false;
+    }
+    
+    chassis.setPose(-49,11,90);
+    chassis.moveToPoint(-30,20,1000,{.minSpeed=10});
+    run_intake();
+    chassis.moveToPoint(-20,26,2000,{.maxSpeed=25,.minSpeed=10});
+    chassis.turnToHeading(45,600);
+    chassis.moveToPoint(-12,36,2000);
+    chassis.moveToPoint(-7,42,2000);
+    chassis.waitUntilDone();
+    match.toggle();
+    chassis.moveToPoint(-12,36,2000,{.forwards=false});
+    
+    chassis.moveToPoint(-12,24,1000);
+    match.toggle();
+    chassis.moveToPoint(-13,26,2000);
+    chassis.moveToPoint(-50,48,1000,{.forwards=false,.minSpeed=10});
+    match.toggle();
+    chassis.turnToHeading(-90,1000);
+    redloaderquick();
+    chassis.moveToPoint(-29,48,1000,{.forwards=false});
+    chassis.turnToHeading(-90,1000);
+    chassis.waitUntilDone();
+    
+    scoretop();
+    
 }
 void r_elim(){
 
@@ -350,41 +380,39 @@ void sawp(){
     }
     
     chassis.setPose(-70.5+(rightdist.get_distance()/25.4+2.75),-13.75,180); 
-    chassis.moveToPoint(chassis.getPose().x+4, -48,2000,{.earlyExitRange=6});
+    chassis.moveToPoint(chassis.getPose().x+4, -44,2000,{.minSpeed=10,.earlyExitRange=6});
     run_intake();
     match.toggle();
     chassis.turnToHeading(-90,1000,{.earlyExitRange=4});
     chassis.waitUntilDone();
     redloaderquick();
 
-    chassis.moveToPoint(-27,-49,1000,{.forwards=false,.earlyExitRange=4});
+    chassis.moveToPoint(-28,-48,1000,{.forwards=false,.minSpeed=30,.earlyExitRange=4});
     //chassis.turnToHeading(-90,1000);
-    chassis.waitUntil(8);
+    chassis.waitUntil(7);
     //chassis.setPose(chassis.getPose().x, -70.5+(leftdist.get_distance()/25.4+2.5),chassis.getPose().theta);
     scoretop();
-    pros::delay(900);
-    chassis.moveToPoint(-36,-48,1000,{.minSpeed=10,.earlyExitRange=4});
+    pros::delay(1200);
+    chassis.moveToPoint(-36,-36,1000,{.minSpeed=10,.earlyExitRange=2});
     match.toggle();
-    chassis.turnToHeading(45,500);
+    chassis.turnToHeading(45,500,{.maxSpeed=60});
     run_intake();
-    chassis.moveToPoint(-27,-30,1000,{.minSpeed=10});
-    chassis.moveToPoint(-23,-25,2000,{.maxSpeed=25});
-    chassis.moveToPoint(-10,-11,1000,{.minSpeed=10});
+    chassis.moveToPoint(-10,-10,3000,{.maxSpeed=30,.minSpeed=30});
+    chassis.waitUntil(12);
     outtake();
-    chassis.turnToHeading(45,500);
     chassis.waitUntilDone();
     pros::delay(200);
     run_intake();
-    chassis.moveToPoint(-18,-18,1000,{.forwards=false,.minSpeed=10,.earlyExitRange=4});
+    chassis.moveToPoint(-20,-18,1000,{.forwards=false,.minSpeed=10,.earlyExitRange=4});
     chassis.turnToHeading(-30,1000,{.minSpeed=10,.earlyExitRange=10});
-    chassis.moveToPoint(-40, 48,3000,{.minSpeed=10,.earlyExitRange=4});
-    chassis.turnToHeading(-90,1000,{.earlyExitRange=4});
+    chassis.follow(arc_txt,9,4000);
+    //chassis.turnToHeading(-90,1000,{.minSpeed=10,.earlyExitRange=6});
     match.toggle();
-    chassis.waitUntilDone();
-    chassis.setPose(chassis.getPose().x, 70.5-(rightdist.get_distance()/25.4+2.5),chassis.getPose().theta);
-    //chassis.moveToPoint(-50,47,2000,{.earlyExitRange=4});
-    chassis.moveToPoint(-55,47,1000,{.minSpeed=60});
-    chassis.moveToPoint(-54,chassis.getPose().y,700,{.maxSpeed=30});
+    // chassis.waitUntilDone();
+    // chassis.setPose(chassis.getPose().x, 70.5-(rightdist.get_distance()/25.4+2.5),chassis.getPose().theta);
+    // //chassis.moveToPoint(-50,47,2000,{.earlyExitRange=4});
+    chassis.moveToPoint(-56,48,1000,{.minSpeed=60});
+    chassis.moveToPoint(-57,chassis.getPose().y,700,{.maxSpeed=30});
     chassis.moveToPoint(-59,chassis.getPose().y,800,{.maxSpeed=35});
     chassis.moveToPoint(-27,48,2000,{.forwards=false,.earlyExitRange=2});
     chassis.turnToHeading(-90,1000);
@@ -406,7 +434,7 @@ rd::Console console;
  * Runs in driver control
  */
 void autonomous(){
-    sawp();
+    elim();
 }
 void opcontrol() {
     // controller
