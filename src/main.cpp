@@ -153,67 +153,6 @@ void scorebottom(){
     top.move_voltage(13000);
     hood.extend();  
 }
-
-void initialize() {
-    pros::lcd::initialize(); // initialize brain screen
-    chassis.calibrate(); // calibrate sensor
-    rightMotors.set_encoder_units_all(pros::E_MOTOR_ENCODER_DEGREES);
-    leftMotors.set_encoder_units_all(pros::E_MOTOR_ENCODER_DEGREES);
-
-    colorsens.set_led_pwm(100);
-    starthue = colorsens.get_hue();
-
-    pros::Task screenTask([&]() {
-        while (true) {
-            // print robot location to the brain screen
-            pros::lcd::print(0, "X: %f", chassis.getPose().x); // x
-            pros::lcd::print(1, "Y: %f", chassis.getPose().y); // y
-            pros::lcd::print(2, "Theta: %f", chassis.getPose().theta); // heading
-            
-            pros::delay(50);
-        }
-    
-    });
-    pros::Task([&](){
-        if(side){//red
-            if (colorsens.get_hue()>starthue+20){
-                top.move_voltage(13000);
-                pros::delay(500);
-                top.move_voltage(0);
-            }
-        }else{
-            if(colorsens.get_hue()<starthue-20){
-                top.move_voltage(13000);
-                pros::delay(500);
-                top.move_voltage(0);
-            }
-        }
-        pros::delay(50);
-    });
-    // selector.on_select([](std::optional<rd::Selector::routine_t> routine) {
-	// 	if (routine == std::nullopt) {
-	// 		std::cout << "No routine selected" << std::endl;
-	// 	} else {
-	// 		std::cout << "Selected Routine: " << routine.value().name << std::endl;
-    //      controller.print(0,0,"%s", routine.value().name);
-	// 	}
-	// });
-}
-
-/**
- * Runs while the robot is disabled
- */
-void disabled() {}
-
-/**
- * runs after initialize if the robot is connected to field control
- */
-void competition_initialize() {}
-
-// get a path used for pure pursuit
-// this needs to be put outside a function
-ASSET(arc_txt); // '.' replaced with "_" to make c++ happy
-ASSET(under_txt); // '.' replaced with "_" to make c++ happy
 void redloader(){
     chassis.moveToPoint(-58,chassis.getPose().y,1000,{.minSpeed=80});
     chassis.moveToPoint(-56,chassis.getPose().y,2000,{.forwards=false,.maxSpeed=30});
@@ -336,7 +275,6 @@ void q_team(){
     chassis.turnToHeading(-45,1000);
     scorebottom();
 }
-
 void elim(){
     if(colorsens.get_hue()<20){
         side = true;
@@ -348,16 +286,7 @@ void elim(){
     chassis.moveToPoint(-30,20,1000,{.minSpeed=10});
     run_intake();
     chassis.moveToPoint(-20,26,2000,{.maxSpeed=25,.minSpeed=10});
-    chassis.turnToHeading(45,600);
-    chassis.moveToPoint(-12,36,2000);
-    chassis.moveToPoint(-7,42,2000);
-    chassis.waitUntilDone();
-    match.toggle();
-    chassis.moveToPoint(-12,36,2000,{.forwards=false});
-    
-    chassis.moveToPoint(-12,24,1000);
-    match.toggle();
-    chassis.moveToPoint(-13,26,2000);
+    chassis.turnToHeading(-35,600);
     chassis.moveToPoint(-50,48,1000,{.forwards=false,.minSpeed=10});
     match.toggle();
     chassis.turnToHeading(-90,1000);
@@ -369,72 +298,119 @@ void elim(){
     scoretop();
     
 }
-void r_elim(){
-
-}
 void sawp(){
-    if(colorsens.get_hue()<20){
-        side = true;
-    }else{
-        side = false;
-    }
-    
-    chassis.setPose(-70.5+(rightdist.get_distance()/25.4+2.75),-13.75,180); 
-    chassis.moveToPoint(chassis.getPose().x+4, -44,2000,{.minSpeed=10,.earlyExitRange=6});
+    chassis.setPose(-49,-11,90);
+    chassis.moveToPoint(-30,-20,1000,{.minSpeed=10});
     run_intake();
-    match.toggle();
-    chassis.turnToHeading(-90,1000,{.earlyExitRange=4});
-    chassis.waitUntilDone();
-    redloaderquick();
-
-    chassis.moveToPoint(-28,-48,1000,{.forwards=false,.minSpeed=30,.earlyExitRange=4});
-    //chassis.turnToHeading(-90,1000);
-    chassis.waitUntil(7);
-    //chassis.setPose(chassis.getPose().x, -70.5+(leftdist.get_distance()/25.4+2.5),chassis.getPose().theta);
-    scoretop();
-    pros::delay(1200);
-    chassis.moveToPoint(-36,-36,1000,{.minSpeed=10,.earlyExitRange=2});
-    match.toggle();
-    chassis.turnToHeading(45,500,{.maxSpeed=60});
-    run_intake();
-    chassis.moveToPoint(-10,-10,3000,{.maxSpeed=30,.minSpeed=30});
-    chassis.waitUntil(12);
+    chassis.moveToPoint(-24,-24,2000,{.maxSpeed=25,.minSpeed=10});
+    chassis.turnToHeading(45,1000);
+    chassis.moveToPoint(-10,-10,1000,{.minSpeed=10});
+    chassis.waitUntil(6);
     outtake();
     chassis.waitUntilDone();
-    pros::delay(200);
+    pros::delay(800);
     run_intake();
-    chassis.moveToPoint(-20,-18,1000,{.forwards=false,.minSpeed=10,.earlyExitRange=4});
-    chassis.turnToHeading(-30,1000,{.minSpeed=10,.earlyExitRange=10});
-    chassis.follow(arc_txt,9,4000);
-    //chassis.turnToHeading(-90,1000,{.minSpeed=10,.earlyExitRange=6});
+    chassis.moveToPoint(-20,-20,1000,{.forwards=false,.minSpeed=10});
+    chassis.turnToHeading(0,1000);
+    chassis.moveToPoint(-24,16,1000,{.minSpeed=10});
+    chassis.moveToPoint(-24,24,2000,{.maxSpeed=25,.minSpeed=10});
+    chassis.turnToHeading(-45,1000);
+    chassis.moveToPoint(-11,13,3000,{.forwards=false,.maxSpeed=50});
+    chassis.turnToHeading(-45,1000);
+    chassis.waitUntilDone();
+    scorebottom();
+    pros::delay(500);
+    run_intake();
+    chassis.moveToPoint(-50,46,1000,{.minSpeed=10});
     match.toggle();
-    // chassis.waitUntilDone();
-    // chassis.setPose(chassis.getPose().x, 70.5-(rightdist.get_distance()/25.4+2.5),chassis.getPose().theta);
-    // //chassis.moveToPoint(-50,47,2000,{.earlyExitRange=4});
-    chassis.moveToPoint(-56,48,1000,{.minSpeed=60});
-    chassis.moveToPoint(-57,chassis.getPose().y,700,{.maxSpeed=30});
-    chassis.moveToPoint(-59,chassis.getPose().y,800,{.maxSpeed=35});
-    chassis.moveToPoint(-27,48,2000,{.forwards=false,.earlyExitRange=2});
     chassis.turnToHeading(-90,1000);
-    chassis.waitUntil(1);
+    redloaderquick();
+    chassis.moveToPoint(-29,48,1000,{.forwards=false});
+    chassis.turnToHeading(-90,1000);
+    chassis.waitUntilDone();
+    
     scoretop();
 }
+
 // Create robodash selector
 rd::Selector selector({
-    // {"SAWP", &sawp, "", 0},
-    // {"Q TEAM", &q_team, "", 220},
-    // {"L Elim", &l_elim, "", 100},
-    // {"R Elim", &r_elim, "", 100},
+    {"SAWP", &sawp, "", 0},
+    {"Q TEAM", &q_team, "", 220},
+    {"Elim", &elim, "", 100},
     {"Skills", &skills, "", 100},
 });
 
 // Create robodash console
 rd::Console console;
+void initialize() {
+    pros::lcd::initialize(); // initialize brain screen
+    chassis.calibrate(); // calibrate sensor
+    rightMotors.set_encoder_units_all(pros::E_MOTOR_ENCODER_DEGREES);
+    leftMotors.set_encoder_units_all(pros::E_MOTOR_ENCODER_DEGREES);
+
+    // colorsens.set_led_pwm(100);
+    // starthue = colorsens.get_hue();
+
+    // pros::Task screenTask([&]() {
+    //     while (true) {
+    //         // print robot location to the brain screen
+    //         pros::lcd::print(0, "X: %f", chassis.getPose().x); // x
+    //         pros::lcd::print(1, "Y: %f", chassis.getPose().y); // y
+    //         pros::lcd::print(2, "Theta: %f", chassis.getPose().theta); // heading
+            
+    //         pros::delay(50);
+    //     }
+    
+    // });
+    // pros::Task([&](){
+    //     if(side){//red
+    //         if (colorsens.get_hue()>starthue+20){
+    //             top.move_voltage(13000);
+    //             pros::delay(500);
+    //             top.move_voltage(0);
+    //         }
+    //     }else{
+    //         if(colorsens.get_hue()<starthue-20){
+    //             top.move_voltage(13000);
+    //             pros::delay(500);
+    //             top.move_voltage(0);
+    //         }
+    //     }
+    //     pros::delay(50);
+    // });
+    selector.on_select([](std::optional<rd::Selector::routine_t> routine) {
+		if (routine == std::nullopt) {
+			std::cout << "No routine selected" << std::endl;
+		} else {
+			std::cout << "Selected Routine: " << routine.value().name << std::endl;
+         controller.print(0,0,"%s", routine.value().name);
+         controller.rumble("- -");
+		}
+	});
+}
+
+/**
+ * Runs while the robot is disabled
+ */
+void disabled() {}
+
+/**
+ * runs after initialize if the robot is connected to field control
+ */
+void competition_initialize() {
+    selector.focus();
+}
+
+// get a path used for pure pursuit
+// this needs to be put outside a function
+ASSET(arc_txt); // '.' replaced with "_" to make c++ happy
+ASSET(under_txt); // '.' replaced with "_" to make c++ happy
+
 /**
  * Runs in driver control
  */
 void autonomous(){
-    elim();
+    selector.run_auton();
 }
 void opcontrol() {
     // controller
