@@ -143,6 +143,10 @@ void outtake(){
     intake.move_voltage(-4000);
     top.move_voltage(-8000);
 }
+void outtakefast(){
+    intake.move_voltage(-6000);
+    top.move_voltage(-8000);
+}
 void scoretop(){
     intake.move_voltage(13000);
     top.move_voltage(13000);
@@ -165,7 +169,7 @@ void redloader(){
 void redloaderquick(){
     chassis.moveToPoint(-59,chassis.getPose().y,500,{.minSpeed=70});
     chassis.moveToPoint(-57,chassis.getPose().y,700,{.maxSpeed=30});
-    chassis.moveToPoint(-62,chassis.getPose().y,800,{.maxSpeed=40});
+    chassis.moveToPoint(-63,chassis.getPose().y,800,{.maxSpeed=40});
 }
 /**
  * Runs during auto
@@ -283,18 +287,16 @@ void elim(){
     }
     
     chassis.setPose(-49,11,90);
-    chassis.moveToPoint(-30,20,1000,{.minSpeed=10});
+    chassis.moveToPoint(-28,20,1000,{.minSpeed=10});
     run_intake();
-    chassis.moveToPoint(-20,26,2000,{.maxSpeed=25,.minSpeed=10});
-    chassis.turnToHeading(-35,600);
-    chassis.moveToPoint(-50,48,1000,{.forwards=false,.minSpeed=10});
+    chassis.moveToPoint(-16,30,2000,{.maxSpeed=35,.minSpeed=10});
+    chassis.turnToHeading(-50,600);
+    chassis.moveToPoint(-50,49.5,1000,{.minSpeed=10});
     match.toggle();
     chassis.turnToHeading(-90,1000);
     redloaderquick();
-    chassis.moveToPoint(-29,48,1000,{.forwards=false});
+    chassis.moveToPoint(-27,49.5,1000,{.forwards=false});
     chassis.turnToHeading(-90,1000);
-    chassis.waitUntilDone();
-    
     scoretop();
     
 }
@@ -302,33 +304,32 @@ void sawp(){
     chassis.setPose(-49,-11,90);
     chassis.moveToPoint(-30,-20,1000,{.minSpeed=10});
     run_intake();
-    chassis.moveToPoint(-24,-24,2000,{.maxSpeed=25,.minSpeed=10});
-    chassis.turnToHeading(45,1000);
-    chassis.moveToPoint(-10,-10,1000,{.minSpeed=10});
-    chassis.waitUntil(6);
-    outtake();
+    chassis.moveToPoint(-20,-26,1000,{.maxSpeed=35,.minSpeed=10});
+    chassis.turnToHeading(45,500);
+    chassis.moveToPoint(-9,-10,1000,{.minSpeed=10});
+    outtakefast();
     chassis.waitUntilDone();
-    pros::delay(800);
+    pros::delay(300);
     run_intake();
     chassis.moveToPoint(-20,-20,1000,{.forwards=false,.minSpeed=10});
-    chassis.turnToHeading(0,1000);
-    chassis.moveToPoint(-24,16,1000,{.minSpeed=10});
-    chassis.moveToPoint(-24,24,2000,{.maxSpeed=25,.minSpeed=10});
-    chassis.turnToHeading(-45,1000);
-    chassis.moveToPoint(-11,13,3000,{.forwards=false,.maxSpeed=50});
-    chassis.turnToHeading(-45,1000);
-    chassis.waitUntilDone();
+    chassis.turnToHeading(0,500);
+    chassis.moveToPoint(-20,15,1000,{.minSpeed=10});
+    chassis.moveToPoint(-23,26,2000,{.maxSpeed=35,.minSpeed=10});
+    chassis.turnToHeading(-45,500);
+    chassis.moveToPoint(-10,13,3000,{.forwards=false,.maxSpeed=50});
+    chassis.turnToHeading(-45,500);
+    outtake();
+    pros::delay(100);
     scorebottom();
-    pros::delay(500);
+    pros::delay(800);
     run_intake();
-    chassis.moveToPoint(-50,46,1000,{.minSpeed=10});
+    chassis.moveToPoint(-50,49,1000,{.minSpeed=10});
     match.toggle();
-    chassis.turnToHeading(-90,1000);
+    chassis.turnToHeading(-90,500);
     redloaderquick();
-    chassis.moveToPoint(-29,48,1000,{.forwards=false});
-    chassis.turnToHeading(-90,1000);
-    chassis.waitUntilDone();
-    
+    chassis.moveToPoint(-29,chassis.getPose().y,1000,{.forwards=false});
+    hood.retract();
+    chassis.turnToHeading(-90,500);
     scoretop();
 }
 
@@ -343,7 +344,7 @@ rd::Selector selector({
 // Create robodash console
 rd::Console console;
 void initialize() {
-    pros::lcd::initialize(); // initialize brain screen
+    //pros::lcd::initialize(); // initialize brain screen
     chassis.calibrate(); // calibrate sensor
     rightMotors.set_encoder_units_all(pros::E_MOTOR_ENCODER_DEGREES);
     leftMotors.set_encoder_units_all(pros::E_MOTOR_ENCODER_DEGREES);
@@ -383,6 +384,7 @@ void initialize() {
 			std::cout << "No routine selected" << std::endl;
 		} else {
 			std::cout << "Selected Routine: " << routine.value().name << std::endl;
+        
          controller.print(0,0,"%s", routine.value().name);
          controller.rumble("- -");
 		}
