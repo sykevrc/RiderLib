@@ -144,18 +144,18 @@ void outtake(){
     top.move_voltage(-8000);
 }
 void outtakefast(){
-    intake.move_voltage(-6000);
+    intake.move_voltage(-8000);
     top.move_voltage(-8000);
 }
 void scoretop(){
     intake.move_voltage(13000);
     top.move_voltage(13000);
-    hood.retract();
+    hood.extend();
 }
 void scorebottom(){
     intake.move_voltage(13000);
     top.move_voltage(13000);
-    hood.extend();  
+    hood.retract();  
 }
 void redloader(){
     chassis.moveToPoint(-58,chassis.getPose().y,1000,{.minSpeed=80});
@@ -290,12 +290,15 @@ void elim(){
     chassis.moveToPoint(-28,20,1000,{.minSpeed=10});
     run_intake();
     chassis.moveToPoint(-16,30,2000,{.maxSpeed=35,.minSpeed=10});
+    chassis.moveToPoint(-24,24,500,{.forwards=false});
+
     chassis.turnToHeading(-50,600);
-    chassis.moveToPoint(-50,49.5,1000,{.minSpeed=10});
+    chassis.moveToPoint(-50,48,1000,{.minSpeed=10});
     match.toggle();
     chassis.turnToHeading(-90,1000);
     redloaderquick();
-    chassis.moveToPoint(-27,49.5,1000,{.forwards=false});
+    chassis.moveToPoint(-27,chassis.getPose().y,1000,{.forwards=false});
+    hood.extend();
     chassis.turnToHeading(-90,1000);
     scoretop();
     
@@ -328,7 +331,7 @@ void sawp(){
     chassis.turnToHeading(-90,500);
     redloaderquick();
     chassis.moveToPoint(-29,chassis.getPose().y,1000,{.forwards=false});
-    hood.retract();
+    hood.extend();
     chassis.turnToHeading(-90,500);
     scoretop();
 }
@@ -426,7 +429,7 @@ void opcontrol() {
 
         if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_L1))
         {
-            outtake();
+            outtakefast();
         }else if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_L2))
         {
             run_intake();    
