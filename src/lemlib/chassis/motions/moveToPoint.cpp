@@ -57,14 +57,42 @@ void lemlib::Chassis::moveToPoint(float x, float y, int timeout, MoveToPointPara
             params.maxSpeed = fmax(fabs(prevLateralOut), 60);
         }
 
-        // motion chaining
-        const bool side =
-            (pose.y - target.y) * -sin(target.theta) <= (pose.x - target.x) * cos(target.theta) + params.earlyExitRange;
-        if (prevSide == std::nullopt) prevSide = side;
-        const bool sameSide = side == prevSide;
-        // exit if close
-        if (!sameSide && params.minSpeed != 0) break;
-        prevSide = side;
+        // motion chaining original
+        // const bool side =
+        //     (pose.y - target.y) * -sin(target.theta) <= (pose.x - target.x) * cos(target.theta) + params.earlyExitRange;
+        // if (prevSide == std::nullopt) prevSide = side;
+        // const bool sameSide = side == prevSide;
+        // // exit if close
+        // if (!sameSide && params.minSpeed != 0) break;
+        // prevSide = side;
+
+        // motion chaining modified — semicircular region around target
+        const double dx = pose.x - target.x;
+        const double dy = pose.y - target.y;
+        const double distSq = dx * dx + dy * dy;
+        const double rangeSq = params.earlyExitRange * params.earlyExitRange;
+
+        // angle from target → robot
+        const double angleToPose = atan2(dy, dx);
+        // normalized difference between that and target heading
+        const double dTheta = std::fmod(angleToPose - target.theta + 3 * M_PI, 2 * M_PI) - M_PI;
+
+        // robot must be in front half of target’s heading to trigger (±90° cone)
+        const bool inFront = std::abs(dTheta) < M_PI / 2;
+        const bool withinRange = distSq <= rangeSq;
+        const bool insideSemicircle = inFront && withinRange;
+
+        // initialize state once
+        if (prevSide == std::nullopt) prevSide = insideSemicircle;
+
+        const bool sameSide = insideSemicircle == *prevSide;
+
+        // exit motion if we newly enter the semicircle (similar to plane crossing)
+        if (!sameSide && params.minSpeed != 0)
+            break;
+
+        prevSide = insideSemicircle;
+
 
         // calculate error
         const float adjustedRobotTheta = params.forwards ? pose.theta : pose.theta + M_PI;
