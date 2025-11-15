@@ -43,7 +43,8 @@ pros::Optical colorsens(4);
 // horizontal tracking wheel. 2.75" diameter, 5.75" offset, back of the robot (negative)
 //lemlib::TrackingWheel horizontal(&horizontalEnc, 2, -5.75);
 // vertical tracking wheel. 2" diameter, .5" offset, right of the robot (negative)
-lemlib::TrackingWheel vertical(&verticalEnc, 2.1, .5);
+lemlib::TrackingWheel vertical(&verticalEnc, 2, -.42171149);
+// lemlib::TrackingWheel vertical(&verticalEnc, 2.1, .5);
 // use distance sensor in the drivetrain
 lemlib::DistanceSensor right(&rightdist, 9.25);
 lemlib::DistanceSensor left(&leftdist, 5);
@@ -70,7 +71,7 @@ lemlib::ControllerSettings linearController(4, // proportional gain (kP)
 );
 
 // angular motion controller
-lemlib::ControllerSettings angularController(1.7, // proportional gain (kP)
+lemlib::ControllerSettings angularController(1.3, // proportional gain (kP)
                                              0.5, // integral gain (kI)
                                              5, // derivative gain (kD)
                                              3, // anti windup
@@ -310,65 +311,7 @@ void skillsv2() {
     chassis.moveToPoint(-68, -5, 2000, {.forwards=false,.minSpeed=70});
 
 }
-void q_l(){
-    
-    chassis.setPose(-70.5+(leftdist.get_distance()/25.4+4.5),13.75,0); 
-    pros::delay(50);
-    chassis.moveToPose(chassis.getPose().x+1, 47.5,-90,2000,{.minSpeed=30,.earlyExitRange=4});
-    run_intake();
-    match.toggle();
-    chassis.waitUntilDone();
-    redloaderquick();
 
-    chassis.moveToPoint(-29,48,1000,{.forwards=false});
-    chassis.turnToHeading(-90,1000);
-    chassis.waitUntilDone();
-    chassis.setPose(chassis.getPose().x, 70.5-(rightdist.get_distance()/25.4+4),chassis.getPose().theta);
-    scoretop();
-    pros::delay(1500);
-
-    match.toggle();
-    run_intake();
-    chassis.moveToPoint(-33,48,500);
-    chassis.moveToPoint(-24,27,1000);
-    chassis.moveToPoint(-22,22,3000,{.maxSpeed=30});
-    match.extend();
-    chassis.turnToHeading(-45,1000);
-
-    chassis.moveToPoint(-10,11,1500,{.forwards=false,.maxSpeed=50});
-    chassis.turnToHeading(-45,1000);
-    scorebottom();
-}
-void q_r(){
-    
-    chassis.setPose(-70.5+(rightdist.get_distance()/25.4+4.5),-13.75,180); 
-    pros::delay(50);
-    chassis.moveToPose(chassis.getPose().x+2, -49,-90,2000,{.minSpeed=30,.earlyExitRange=4});
-    run_intake();
-    match.toggle();
-    chassis.waitUntilDone();
-    redloaderquick();
-
-    chassis.moveToPoint(-29,-49,1000,{.forwards=false});
-    chassis.turnToHeading(-90,1000);
-    chassis.waitUntilDone();
-    chassis.setPose(chassis.getPose().x, -70.5+(leftdist.get_distance()/25.4+4),chassis.getPose().theta);
-    scoretop();
-    pros::delay(1200);
-
-    match.toggle();
-    run_intake();
-    chassis.moveToPoint(-33,-48,500);
-    chassis.moveToPoint(-27,-27,1000);
-    chassis.moveToPoint(-22,-22,3000,{.maxSpeed=30});
-    match.extend();
-    chassis.turnToHeading(45,1000);
-
-    chassis.moveToPoint(-11,-11,1000,{.maxSpeed=50});
-    match.retract();
-    chassis.turnToHeading(45,1000);
-    outtakefast();
-}
 void elim_l(){
     
     
@@ -521,17 +464,18 @@ void skills(){
 // Create robodash selector
 rd::Selector selector({
     {"SAWP", &sawp, "", 0},
-    {"Q L", &q_l, "", 50},
-    {"ElimL", &elim_l, "", 100},
-    {"Q R", &q_r, "", 150},
-    {"ElimR", &elim_r, "", 200},
-    {"Skills", &skillsv2, "", 250},
+    {"ElimL", &elim_l, "", 50},
+    {"ElimR", &elim_r, "", 100},
+    {"Skills", &skillsv2, "", 200},
 });
-
+void tune(){
+    chassis.setPose(0,0,0);
+    chassis.moveToPose(20,42,90,3000);
+}
 // Create robodash console
 rd::Console console;
 void initialize() {
-    //pros::lcd::initialize(); // initialize brain screen
+    pros::lcd::initialize(); // initialize brain screen
     chassis.calibrate(); // calibrate sensor
     rightMotors.set_encoder_units_all(pros::E_MOTOR_ENCODER_DEGREES);
     leftMotors.set_encoder_units_all(pros::E_MOTOR_ENCODER_DEGREES);
@@ -539,41 +483,31 @@ void initialize() {
     // colorsens.set_led_pwm(100);
     // starthue = colorsens.get_hue();
 
-    // pros::Task screenTask([&]() {
-    //     while (true) {
-    //         // print robot location to the brain screen
-    //         pros::lcd::print(0, "X: %f", chassis.getPose().x); // x
-    //         pros::lcd::print(1, "Y: %f", chassis.getPose().y); // y
-    //         pros::lcd::print(2, "Theta: %f", chassis.getPose().theta); // heading
+    pros::Task screenTask([&]() {
+        while (true) {
+            // print robot location to the brain screen
+            pros::lcd::print(0, "X: %f", chassis.getPose().x); // x
+            pros::lcd::print(1, "Y: %f", chassis.getPose().y); // y
+            pros::lcd::print(2, "Theta: %f", chassis.getPose().theta); // heading
             
-    //         pros::delay(50);
-    //     }
+            pros::delay(50);
+        }
     
-    // });
+    });
     // pros::Task([&](){
-    //     if(side){//red
-    //         if (colorsens.get_hue()>starthue+20){
-    //             top.move_voltage(13000);
-    //             pros::delay(500);
-    //             top.move_voltage(0);
-    //         }
-    //     }else{
-    //         if(colorsens.get_hue()<starthue-20){
-    //             top.move_voltage(13000);
-    //             pros::delay(500);
-    //             top.move_voltage(0);
-    //         }
+    //     while(true){
+    //         printf("%.4f,%.4f,%.4f,%d,%d\n", chassis.getPose().x, chassis.getPose().y, imu.get_heading(),rightdist.get(), leftdist.get());
     //     }
-    //     pros::delay(50);
+        
+    //     pros::delay(150);
     // });
     selector.on_select([](std::optional<rd::Selector::routine_t> routine) {
 		if (routine == std::nullopt) {
 			std::cout << "No routine selected" << std::endl;
 		} else {
 			std::cout << "Selected Routine: " << routine.value().name << std::endl;
-        
+         controller.print(0,0,"          ");
          controller.print(0,0,"%s", routine.value().name);
-         controller.rumble("- -");
 		}
 	});
 }
@@ -587,7 +521,7 @@ void disabled() {}
  * runs after initialize if the robot is connected to field control
  */
 void competition_initialize() {
-    selector.focus();
+    //selector.focus();
 }
 
 // get a path used for pure pursuit
@@ -599,7 +533,8 @@ ASSET(under_txt); // '.' replaced with "_" to make c++ happy
  * Runs in driver control
  */
 void autonomous(){
-    selector.run_auton();
+    tune();
+    //selector.run_auton();
     //skills();
 }
 void opcontrol() {

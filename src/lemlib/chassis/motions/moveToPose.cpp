@@ -5,20 +5,24 @@
 #include "lemlib/util.hpp"
 #include "pros/misc.hpp"
 
+inline float sinc(float x) {
+    if (fabsf(x) < 1e-6f) return 1.0f;
+    return sinf(x) / x;
+}
+
 void lemlib::Chassis::moveToPose(float x, float y, float theta, int timeout, MoveToPoseParams params, bool async) {
-    // take the mutex
+    // Take mutex
     this->requestMotionStart();
-    // were all motions cancelled?
     if (!this->motionRunning) return;
-    // if the function is async, run it in a new task
+
     if (async) {
         pros::Task task([&]() { moveToPose(x, y, theta, timeout, params, false); });
         this->endMotion();
-        pros::delay(10); // delay to give the task time to start
+        pros::delay(10);
         return;
     }
 
-    // reset PIDs and exit conditions
+    // Reset exit conditions and PIDs
     lateralPID.reset();
     lateralLargeExit.reset();
     lateralSmallExit.reset();
@@ -26,136 +30,96 @@ void lemlib::Chassis::moveToPose(float x, float y, float theta, int timeout, Mov
     angularLargeExit.reset();
     angularSmallExit.reset();
 
-    // calculate target pose in standard form
     Pose target(x, y, M_PI_2 - degToRad(theta));
-    if (!params.forwards) target.theta = fmod(target.theta + M_PI, 2 * M_PI); // backwards movement
-
-    // use global horizontalDrift is horizontalDrift is 0
+    if (!params.forwards) target.theta = fmod(target.theta + M_PI, 2 * M_PI);
     if (params.horizontalDrift == 0) params.horizontalDrift = drivetrain.horizontalDrift;
 
-    // initialize vars used between iterations
     Pose lastPose = getPose();
     distTraveled = 0;
     Timer timer(timeout);
-    bool close = false;
-    bool lateralSettled = false;
-    bool prevSameSide = false;
-    float prevLateralOut = 0; // previous lateral power
-    float prevAngularOut = 0; // previous angular power
-    const int compState = pros::competition::get_status();
 
-    // main loop
-    while (!timer.isDone() &&
-           ((!lateralSettled || (!angularLargeExit.getExit() && !angularSmallExit.getExit())) || !close) &&
-           this->motionRunning) {
-        // update position
-        const Pose pose = getPose(true, true);
+    // Ramsete tuning
+    const float b = 1.0f;       // aggressiveness
+    const float zeta = .5f;    // damping
+    const float wheelbase = drivetrain.trackWidth;
+    const float v_max = params.maxSpeed;
+    const float w_max = 5.0f;
 
-        // update distance traveled
+    // Trapezoidal velocity profile params
+    const float t_ramp_frac = 0.1f;  // fraction of path for accel/decel
+
+    // Main loop
+    while (!timer.isDone() && this->motionRunning) {
+        Pose pose = getPose(true, true);
         distTraveled += pose.distance(lastPose);
         lastPose = pose;
 
-        // calculate distance to the target point
-        const float distTarget = pose.distance(target);
+        float distTarget = pose.distance(target);
+        float progress = std::clamp(distTraveled / distTarget, 0.0f, 1.0f);
 
-        // check if the robot is close enough to the target to start settling
-        if (distTarget < 7.5 && close == false) {
-            close = true;
-            params.maxSpeed = fmax(fabs(prevLateralOut), 60);
-        }
+        // --- Trapezoidal feedforward ---
+        float v_ff;
+        if (progress < t_ramp_frac)
+            v_ff = v_max * (progress / t_ramp_frac);
+        else if (progress > 1.0f - t_ramp_frac)
+            v_ff = v_max * ((1.0f - progress) / t_ramp_frac);
+        else
+            v_ff = v_max;
 
-        // check if the lateral controller has settled
-        if (lateralLargeExit.getExit() && lateralSmallExit.getExit()) lateralSettled = true;
+        // --- Compute errors ---
+        float dx = target.x - pose.x;
+        float dy = target.y - pose.y;
+        float e_theta = atan2f(sinf(target.theta - pose.theta), cosf(target.theta - pose.theta));
 
-        // calculate the carrot point
-        Pose carrot = target - Pose(cos(target.theta), sin(target.theta)) * params.lead * distTarget;
-        if (close) carrot = target; // settling behavior
+        float lookahead = 5.0f; // mm or inches
+        dx -= lookahead * cos(target.theta);
+        dy -= lookahead * sin(target.theta);
 
-        // calculate if the robot is on the same side as the carrot point
-        const bool robotSide =
-            (pose.y - target.y) * -sin(target.theta) <= (pose.x - target.x) * cos(target.theta) + params.earlyExitRange;
-        const bool carrotSide = (carrot.y - target.y) * -sin(target.theta) <=
-                                (carrot.x - target.x) * cos(target.theta) + params.earlyExitRange;
-        const bool sameSide = robotSide == carrotSide;
-        // exit if close
-        if (!sameSide && prevSameSide && close && params.minSpeed != 0) break;
-        prevSameSide = sameSide;
+        float e_x = cos(pose.theta) * dx + sin(pose.theta) * dy;
+        float e_y = -sin(pose.theta) * dx + cos(pose.theta) * dy;
 
-        // calculate error
-        const float adjustedRobotTheta = params.forwards ? pose.theta : pose.theta + M_PI;
-        const float angularError =
-            close ? angleError(adjustedRobotTheta, target.theta) : angleError(adjustedRobotTheta, pose.angle(carrot));
-        float lateralError = pose.distance(carrot);
-        // only use cos when settling
-        // otherwise just multiply by the sign of cos
-        // maxSlipSpeed takes care of lateralOut
-        if (close) lateralError *= cos(angleError(pose.theta, pose.angle(carrot)));
-        else lateralError *= sgn(cos(angleError(pose.theta, pose.angle(carrot))));
+        // Ramsete gains
+        float k = 2.0f * zeta * sqrtf(b * v_ff * v_ff + w_max * w_max);
+        float lateralGain = 1.5f;  // stronger lateral correction
+        float v_cmd = v_ff * cos(e_theta) + k * e_x;
+        float w_cmd = b * lateralGain * v_ff * sinc(e_theta) * e_y + k * e_theta;
 
-        // update exit conditions
-        lateralSmallExit.update(lateralError);
-        lateralLargeExit.update(lateralError);
-        angularSmallExit.update(radToDeg(angularError));
-        angularLargeExit.update(radToDeg(angularError));
+        // Dynamic forward scaling based on lateral error
+        float maxLat = 10.0f; // adjust as needed
+        float speedScale = std::clamp(1.0f - fabsf(e_y) / maxLat, 0.3f, 1.0f);
 
-        // get output from PIDs
-        float lateralOut = lateralPID.update(lateralError);
-        float angularOut = angularPID.update(radToDeg(angularError));
+        v_cmd *= speedScale;
+        // --- Apply feedforward deceleration taper near target ---
+        float slowZone = 12.0f; // distance units
+        float slowMult = std::clamp(distTarget / slowZone, 0.15f, 1.0f);
+        v_cmd *= slowMult;
+        w_cmd *= slowMult;
 
-        // apply restrictions on angular speed
-        angularOut = std::clamp(angularOut, -params.maxSpeed, params.maxSpeed);
+        // --- Clamp velocities ---
+        v_cmd = std::clamp(v_cmd, -v_max, v_max);
+        w_cmd = std::clamp(w_cmd, -w_max, w_max);
 
-        // apply restrictions on lateral speed
-        lateralOut = std::clamp(lateralOut, -params.maxSpeed, params.maxSpeed);
+        // --- Convert to wheel velocities ---
+        float v_L = v_cmd - w_cmd * wheelbase / 2.0f;
+        float v_R = v_cmd + w_cmd * wheelbase / 2.0f;
 
-        // constrain lateral output by max accel
-        if (!close) lateralOut = slew(lateralOut, prevLateralOut, lateralSettings.slew);
+        float leftPower = std::clamp(v_L, -v_max, v_max);
+        float rightPower = std::clamp(v_R, -v_max, v_max);
 
-        // constrain lateral output by the max speed it can travel at without
-        // slipping
-        const float radius = 1 / fabs(getCurvature(pose, carrot));
-        const float maxSlipSpeed(sqrt(params.horizontalDrift * radius * 9.8));
-        lateralOut = std::clamp(lateralOut, -maxSlipSpeed, maxSlipSpeed);
-        // prioritize angular movement over lateral movement
-        const float overturn = fabs(angularOut) + fabs(lateralOut) - params.maxSpeed;
-        if (overturn > 0) lateralOut -= lateralOut > 0 ? overturn : -overturn;
-
-        // prevent moving in the wrong direction
-        if (params.forwards && !close) lateralOut = std::fmax(lateralOut, 0);
-        else if (!params.forwards && !close) lateralOut = std::fmin(lateralOut, 0);
-
-        // constrain lateral output by the minimum speed
-        if (params.forwards && lateralOut < fabs(params.minSpeed) && lateralOut > 0) lateralOut = fabs(params.minSpeed);
-        if (!params.forwards && -lateralOut < fabs(params.minSpeed) && lateralOut < 0)
-            lateralOut = -fabs(params.minSpeed);
-
-        // update previous output
-        prevAngularOut = angularOut;
-        prevLateralOut = lateralOut;
-
-        infoSink()->debug("lateralOut: {} angularOut: {}", lateralOut, angularOut);
-
-        // ratio the speeds to respect the max speed
-        float leftPower = lateralOut + angularOut;
-        float rightPower = lateralOut - angularOut;
-        const float ratio = std::max(std::fabs(leftPower), std::fabs(rightPower)) / params.maxSpeed;
-        if (ratio > 1) {
-            leftPower /= ratio;
-            rightPower /= ratio;
-        }
-
-        // move the drivetrain
         drivetrain.leftMotors->move(leftPower);
         drivetrain.rightMotors->move(rightPower);
 
-        // delay to save resources
+        // --- Deadzone stop threshold ---
+        if (distTarget < 1.0 && fabs(v_cmd) < 1.0 && fabs(w_cmd) < 0.2) {
+            drivetrain.leftMotors->move(0);
+            drivetrain.rightMotors->move(0);
+            break;
+        }
+
         pros::delay(10);
     }
 
-    // stop the drivetrain
-    drivetrain.leftMotors->move(0);
-    drivetrain.rightMotors->move(0);
-    // set distTraveled to -1 to indicate that the function has finished
+    // Motion finished
     distTraveled = -1;
     this->endMotion();
 }
