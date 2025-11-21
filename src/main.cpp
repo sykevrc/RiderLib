@@ -383,7 +383,7 @@ void elim_l(){
     
     redloaderquick();
     top.move_relative(300,600);
-    chassis.moveToPoint(-20,52,1000,{.forwards=false,.maxSpeed=60});
+    chassis.moveToPoint(-20,51,1000,{.forwards=false,.maxSpeed=60});
     chassis.waitUntil(13);
     outtake();
     chassis.waitUntil(17);
@@ -631,8 +631,8 @@ ASSET(under_txt); // '.' replaced with "_" to make c++ happy
  * Runs in driver control
  */
 void autonomous(){
-    //selector.run_auton();
-    elim_l();
+    selector.run_auton();
+    //elim_l();
 }
 void opcontrol() {
     // controller
