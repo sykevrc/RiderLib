@@ -116,7 +116,7 @@ lemlib::Chassis chassis(drivetrain, linearController, angularController, sensors
 
 void run_intake(){
     intake.move_voltage(13000);
-    top.move_voltage(500);
+    top.move_voltage(1000);
     hood.retract();
 }
 
@@ -138,7 +138,10 @@ void scorebottom(){
     top.move_voltage(13000);
     hood.extend();  
 }
-
+void stop(){
+    intake.move_voltage(0);
+    top.move_voltage(0);
+}
 void redloaderquick(){
     chassis.moveToPoint(-70,chassis.getPose().y,200,{.minSpeed=50});
     chassis.moveToPoint(-70,chassis.getPose().y,1000,{.maxSpeed=14,.minSpeed=10});
@@ -643,38 +646,24 @@ void opcontrol() {
         int rightX = controller.get_analog(pros::E_CONTROLLER_ANALOG_RIGHT_X);
         // move the chassis with curvature drive
         chassis.arcade(leftY, rightX);
-
+        if(!controller.get_digital(pros::E_CONTROLLER_DIGITAL_L1)&&!controller.get_digital(pros::E_CONTROLLER_DIGITAL_L2)&&!controller.get_digital(pros::E_CONTROLLER_DIGITAL_R1)&&!controller.get_digital(pros::E_CONTROLLER_DIGITAL_R2)&&!controller.get_digital(pros::E_CONTROLLER_DIGITAL_DOWN)){
+            stop();
+        }
         if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_L1))
         {
             outtakefast();
-        }else{
-            intake.move_voltage(0);
-            //bottom.move_voltage(0);
-            top.move_voltage(0);
         }
         if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_L2))
         {
             run_intake();    
-        }else{
-            intake.move_voltage(0);
-            //bottom.move_voltage(0);
-            top.move_voltage(0);
         }
         if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_R2))
         {
             scoretop();
-        }else{
-            intake.move_voltage(0);
-            //bottom.move_voltage(0);
-            top.move_voltage(0);
         }
         if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_R1))
         {
             scorebottom();
-        }else{
-            intake.move_voltage(0);
-            //bottom.move_voltage(0);
-            top.move_voltage(0);
         }
         if (controller.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_RIGHT))
         {
@@ -683,10 +672,6 @@ void opcontrol() {
         if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_DOWN))
         {
             outtake();
-        }else{
-            intake.move_voltage(0);
-            //bottom.move_voltage(0);
-            top.move_voltage(0);
         }
         // delay to save resources
         pros::delay(10);
