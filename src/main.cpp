@@ -121,7 +121,7 @@ void run_intake(){
 }
 
 void outtake(){
-    intake.move_voltage(-4000);
+    intake.move_voltage(-6000);
     top.move_voltage(-8000);
 }
 void outtakefast(){
@@ -140,8 +140,8 @@ void scorebottom(){
 }
 
 void redloaderquick(){
-    chassis.moveToPoint(-70,chassis.getPose().y,200,{.minSpeed=70});
-    chassis.moveToPoint(-70,chassis.getPose().y,1000,{.maxSpeed=15,.minSpeed=10});
+    chassis.moveToPoint(-70,chassis.getPose().y,200,{.minSpeed=50});
+    chassis.moveToPoint(-70,chassis.getPose().y,1000,{.maxSpeed=14,.minSpeed=10});
     //chassis.moveToPoint(chassis.getPose().x+.5,chassis.getPose().y,300,{.forwards=false,.minSpeed=30});
     //chassis.moveToPoint(chassis.getPose().x-15,chassis.getPose().y,1000,{.minSpeed=30});
 
@@ -373,18 +373,20 @@ void elim_l(){
     chassis.waitUntil(8);
     match.extend();
     pros::delay(500);
-    chassis.moveToPoint(-7,35,600,{.forwards=false});
+    chassis.moveToPoint(-7,30,600,{.forwards=false,.minSpeed=50});
     chassis.turnToHeading(-90,400);
 
     
-    chassis.moveToPoint(-46,52,2000,{.minSpeed=10});
-    top.move_relative(600,600);
-    chassis.turnToHeading(-90,700,{.maxSpeed=50});
+    chassis.moveToPoint(-48,50,1600,{.minSpeed=10});
+    top.move_relative(400,600);
+    chassis.turnToHeading(-90,700);
     
     redloaderquick();
     top.move_relative(300,600);
     chassis.moveToPoint(-20,52,1000,{.forwards=false,.maxSpeed=60});
-    chassis.waitUntil(14);
+    chassis.waitUntil(13);
+    outtake();
+    chassis.waitUntil(17);
     scoretop();
     pros::delay(2000);
     chassis.setPose(-28.75,48,chassis.getPose().theta);
@@ -645,25 +647,42 @@ void opcontrol() {
         if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_L1))
         {
             outtakefast();
-        }else if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_L2))
+        }else{
+            intake.move_voltage(0);
+            //bottom.move_voltage(0);
+            top.move_voltage(0);
+        }
+        if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_L2))
         {
             run_intake();    
-        }else if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_R2))
+        }else{
+            intake.move_voltage(0);
+            //bottom.move_voltage(0);
+            top.move_voltage(0);
+        }
+        if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_R2))
         {
             scoretop();
-        }else if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_R1))
+        }else{
+            intake.move_voltage(0);
+            //bottom.move_voltage(0);
+            top.move_voltage(0);
+        }
+        if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_R1))
         {
             scorebottom();
-        }else if (controller.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_RIGHT))
+        }else{
+            intake.move_voltage(0);
+            //bottom.move_voltage(0);
+            top.move_voltage(0);
+        }
+        if (controller.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_RIGHT))
         {
             match.toggle();
-        }else if (controller.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_UP))
+        }
+        if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_DOWN))
         {
-            // for(int i = 0; i < 360; i+=90){
-            //     chassis.turnToHeading(i,1000);                
-            //     printf("Angle:%f\n",chassis.getPose().theta);
-            //     pros::delay(100);
-            // }
+            outtake();
         }else{
             intake.move_voltage(0);
             //bottom.move_voltage(0);
