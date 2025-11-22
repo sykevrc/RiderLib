@@ -215,7 +215,7 @@ void skillsv2() {
     outtake();
     pros::delay(500);
     scoretop();
-    pros::delay(1500);
+    pros::delay(2000);
     chassis.moveToPoint(55,47,1000);
     run_intake();
     match.extend();
@@ -231,7 +231,7 @@ void skillsv2() {
     outtake();
     pros::delay(500);
     scoretop();
-    pros::delay(1500);
+    pros::delay(2000);
 
     chassis.moveToPoint(33,48,500);
     match.retract();
@@ -276,7 +276,7 @@ void skillsv2() {
     outtake();
     pros::delay(500);
     scoretop();
-    pros::delay(1500);
+    pros::delay(2000);
     chassis.moveToPoint(-55,-46.5,1000);
     run_intake();
     match.extend();
@@ -292,7 +292,7 @@ void skillsv2() {
     outtake();
     pros::delay(200);
     scoretop();
-    pros::delay(1500);
+    pros::delay(2000);
 
     chassis.moveToPoint(-37,-48,800);
     // chassis.turnToHeading(-45,600);
