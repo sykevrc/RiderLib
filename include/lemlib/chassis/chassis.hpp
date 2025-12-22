@@ -308,7 +308,7 @@ struct MoveToPoseParams {
 };
 
 /**
- * @brief Parameters for Chassis::moveToPoint
+ * @brief Parameters for Chassis::
  *
  * We use a struct to simplify customization. Chassis::moveToPoint has many
  * parameters and specifying them all just to set one optional param harms
@@ -914,6 +914,8 @@ class Chassis {
          * @warning Do not interact with these unless you know what you are doing
          */
         PID angularPID;
+                ControllerSettings lateralSettings;
+        ControllerSettings angularSettings;
     protected:
         /**
          * @brief Indicates that this motion is queued and blocks current task until this motion reaches front of queue
@@ -929,8 +931,7 @@ class Chassis {
 
         float distTraveled = 0;
 
-        ControllerSettings lateralSettings;
-        ControllerSettings angularSettings;
+
         Drivetrain drivetrain;
         OdomSensors sensors;
         DriveCurve* throttleCurve;

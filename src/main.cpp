@@ -19,14 +19,17 @@ pros::Controller controller(pros::E_CONTROLLER_MASTER);
 // motor groups
 pros::MotorGroup leftMotors({-2,-19,-12},
                             pros::MotorGearset::blue); // left motor group - ports 3 (reversed), 4, 5 (reversed)
-pros::MotorGroup rightMotors({10,20,13}, pros::MotorGearset::blue); // right motor group - ports 6, 7, 9 (reversed)
+pros::MotorGroup rightMotors({9,20,13}, pros::MotorGearset::blue); // right motor group - ports 6, 7, 9 (reversed)
 
-pros::Motor intake(-1);
-pros::Motor top(-16);
+pros::Motor intake(1);
+pros::Motor top(8);
 //pros::Motor top(8);
 
 pros::adi::Pneumatics hood(1, false);
-pros::adi::Pneumatics match(2, false);
+pros::adi::Pneumatics clamp(2, false);
+pros::adi::Pneumatics match(6, false);
+pros::adi::Pneumatics park(7, false);
+
 // Inertial Sensor on port 11
 pros::Imu imu(11);
 
@@ -36,7 +39,7 @@ pros::Imu imu(11);
 // vertical tracking wheel encoder. Rotation sensor, port 11, reversed
 pros::Rotation verticalEnc(3);
 // distance sensor, right side on port 12
-pros::Distance rightdist(9);
+pros::Distance rightdist(10);
 pros::Distance leftdist(5);
 
 pros::Optical colorsens(4);
@@ -116,7 +119,7 @@ lemlib::Chassis chassis(drivetrain, linearController, angularController, sensors
 
 void run_intake(){
     intake.move_voltage(13000);
-    top.move_voltage(1000);
+    top.move_voltage(10000);
     hood.retract();
 }
 
@@ -131,12 +134,12 @@ void outtakefast(){
 void scoretop(){
     intake.move_voltage(13000);
     top.move_voltage(13000);
-    hood.retract();
+    hood.extend();
 }
 void scorebottom(){
     intake.move_voltage(13000);
-    top.move_voltage(13000);
-    hood.extend();  
+    top.move_voltage(-13000);
+    //hood.extend();  
 }
 void stop(){
     intake.move_voltage(0);
@@ -675,6 +678,7 @@ void opcontrol() {
         {
             outtake();
         }
+        chassis.lateralSettings.kP=3;
         // delay to save resources
         pros::delay(10);
     }
